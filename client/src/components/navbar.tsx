@@ -43,7 +43,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                     <nav className="hidden lg:flex items-center gap-6">
                         <Link href="/shop" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Shop</Link>
                         <a href={`${import.meta.env.BASE_URL}#categories`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Categories</a>
-                        <a href={`${import.meta.env.BASE_URL}#about`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">About</a>
+                        <a href={`${import.meta.env.BASE_URL}#contact`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Contact Us</a>
                     </nav>
 
                     <div className="hidden md:flex items-center gap-4">
@@ -126,7 +126,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                         />
                         <Link href="/shop" className="py-2 font-medium">Shop</Link>
                         <a href={`${import.meta.env.BASE_URL}#categories`} className="py-2 font-medium">Categories</a>
-                        <a href={`${import.meta.env.BASE_URL}#about`} className="py-2 font-medium">About</a>
+                        <a href={`${import.meta.env.BASE_URL}#contact`} className="py-2 font-medium">Contact Us</a>
                         {user && (
                             <div className="py-2 flex items-center justify-between">
                                 <span className="font-medium">Notifications</span>

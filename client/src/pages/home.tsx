@@ -239,29 +239,55 @@ export default function Home() {
         </div>
       </section>
 
-      <section id="about" className="py-16 lg:py-20 bg-gradient-leaf text-white">
+      <section id="contact" className="py-16 lg:py-20 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { icon: Truck, title: "Free Delivery", desc: "On orders above ৳500" },
-              { icon: Recycle, title: "100% Eco-Friendly", desc: "Plastic-free packaging" },
-              { icon: Shield, title: "Quality Assured", desc: "Verified sustainable products" },
-              { icon: Users, title: "Local Support", desc: "Empowering BD artisans" },
-            ].map((item, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="text-center"
-              >
-                <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-4">
-                  <item.icon className="h-8 w-8" />
-                </div>
-                <h3 className="font-display font-semibold text-lg mb-2">{item.title}</h3>
-                <p className="text-white/80 text-sm">{item.desc}</p>
-              </motion.div>
-            ))}
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">Meet Our Team</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              The visionary minds behind EcoHaat, dedicated to bringing sustainable living to Bangladesh.
+            </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Founder */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-card p-6 rounded-2xl border border-card-border text-center hover:shadow-lg transition-shadow">
+              <div className="h-24 w-24 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Users className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="font-display font-bold text-lg">Abdur Rahman Talha</h3>
+              <p className="text-primary font-medium text-sm mb-2">Founder</p>
+              <p className="text-muted-foreground text-sm">01909306441</p>
+            </motion.div>
+
+            {/* Co-founder & CEO */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="bg-card p-6 rounded-2xl border border-card-border text-center hover:shadow-lg transition-shadow">
+              <div className="h-24 w-24 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Shield className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="font-display font-bold text-lg">Azmine Tasik</h3>
+              <p className="text-primary font-medium text-sm mb-2">Co-founder & CEO</p>
+              <p className="text-muted-foreground text-sm">+8801985011806</p>
+            </motion.div>
+
+            {/* CTO */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="bg-card p-6 rounded-2xl border border-card-border text-center hover:shadow-lg transition-shadow">
+              <div className="h-24 w-24 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <TreeDeciduous className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="font-display font-bold text-lg">Muhammad Nisar Uddin</h3>
+              <p className="text-primary font-medium text-sm mb-2">CTO</p>
+              <p className="text-muted-foreground text-sm">+8801852903417</p>
+            </motion.div>
+
+            {/* Technical Foundation */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="bg-card p-6 rounded-2xl border border-card-border text-center hover:shadow-lg transition-shadow">
+              <div className="h-24 w-24 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
+                <Leaf className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="font-display font-bold text-lg">Adnan Shahria</h3>
+              <p className="text-primary font-medium text-sm mb-2">Tech Foundation & Mgmt</p>
+              <p className="text-muted-foreground text-sm pb-2">DevOps & Architecture</p>
+              <p className="text-muted-foreground text-xs">01853452264</p>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -354,8 +380,8 @@ export default function Home() {
               {
                 title: "Company",
                 links: [
-                  { label: "About Us", href: `${import.meta.env.BASE_URL}#about` },
-                  { label: "Our Story", href: `${import.meta.env.BASE_URL}#about` },
+                  { label: "Contact Us", href: `${import.meta.env.BASE_URL}#contact` },
+                  { label: "Team", href: `${import.meta.env.BASE_URL}#contact` },
                   { label: "Blog", href: "#" },
                   { label: "Careers", href: "#" }
                 ]
@@ -363,7 +389,7 @@ export default function Home() {
               {
                 title: "Support",
                 links: [
-                  { label: "Contact", href: "#" },
+                  { label: "Help Center", href: "#" },
                   { label: "FAQs", href: "#" },
                   { label: "Shipping", href: "#" },
                   { label: "Returns", href: "#" }
