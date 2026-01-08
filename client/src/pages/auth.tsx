@@ -87,7 +87,7 @@ export default function Auth() {
                 <div className="bg-white rounded-2xl shadow-xl border p-6">
                     {/* Logo */}
                     <div className="flex justify-center mb-6">
-                        <img src="/logo-en.png" alt="EcoHaat" className="h-20" />
+                        <img src={import.meta.env.BASE_URL + "logo-en.png"} alt="EcoHaat" className="h-20" />
                     </div>
 
                     {/* Mode Toggle */}
