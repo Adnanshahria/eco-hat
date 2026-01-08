@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Leaf, 
-  Recycle, 
-  Heart, 
-  ShoppingBag, 
-  Search, 
-  Menu, 
+import {
+  Leaf,
+  Recycle,
+  Heart,
+  ShoppingBag,
+  Search,
+  Menu,
   X,
   TreeDeciduous,
   Droplets,
@@ -19,7 +19,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logoBn from "@assets/Add_a_subheading(1)_1767846566910.png";
+import { Link } from "wouter";
+import { NavBar } from "@/components/navbar";
 
 const categories = [
   { id: 1, name: "Household", icon: TreeDeciduous, count: 45, color: "bg-emerald-100 text-emerald-700" },
@@ -51,80 +52,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background grain-texture">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16 lg:h-20">
-            <div className="flex items-center gap-3">
-              <img src={logoBn} alt="ইকো হাট" className="h-12 lg:h-14 w-auto" data-testid="img-logo" />
-            </div>
-
-            <nav className="hidden lg:flex items-center gap-8">
-              {["Shop", "Categories", "About", "Blog", "Contact"].map((item) => (
-                <a 
-                  key={item}
-                  href="#" 
-                  className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
-                  data-testid={`link-nav-${item.toLowerCase()}`}
-                >
-                  {item}
-                </a>
-              ))}
-            </nav>
-
-            <div className="hidden md:flex items-center gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search eco products..."
-                  className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  data-testid="input-search"
-                />
-              </div>
-              <Button variant="ghost" size="icon" className="relative" data-testid="button-cart">
-                <ShoppingBag className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                  3
-                </span>
-              </Button>
-              <Button className="bg-primary hover:bg-primary/90 font-display font-medium" data-testid="button-signin">
-                Sign In
-              </Button>
-            </div>
-
-            <button 
-              className="lg:hidden p-2"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="button-mobile-menu"
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-          </div>
-        </div>
-
-        {mobileMenuOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="lg:hidden border-t border-border bg-background p-4"
-          >
-            <div className="flex flex-col gap-4">
-              <Input
-                type="search"
-                placeholder="Search eco products..."
-                className="bg-muted/50"
-                data-testid="input-search-mobile"
-              />
-              {["Shop", "Categories", "About", "Blog", "Contact"].map((item) => (
-                <a key={item} href="#" className="py-2 font-medium">{item}</a>
-              ))}
-              <Button className="w-full bg-primary">Sign In</Button>
-            </div>
-          </motion.div>
-        )}
-      </header>
+      <NavBar />
 
       <section className="relative overflow-hidden bg-gradient-natural leaf-pattern">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
@@ -144,7 +72,7 @@ export default function Home() {
                 <span className="text-foreground">for Everyday Life</span>
               </h1>
               <p className="text-lg text-muted-foreground mb-8 max-w-lg">
-                Bangladesh's first curated eco-marketplace. Discover plastic-free, 
+                Bangladesh's first curated eco-marketplace. Discover plastic-free,
                 natural products from local artisans and ethical brands.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
@@ -260,52 +188,48 @@ export default function Home() {
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {featuredProducts.map((product, index) => (
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
                 className="group"
                 data-testid={`card-product-${product.id}`}
               >
-                <div className="bg-card rounded-2xl overflow-hidden border border-card-border hover:shadow-xl transition-all duration-300">
+                <div className="bg-card rounded-xl overflow-hidden border border-card-border hover:shadow-lg transition-all duration-300">
                   <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-                    <span className="text-7xl group-hover:scale-110 transition-transform duration-300">{product.image}</span>
+                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">{product.image}</span>
                     {product.tag && (
-                      <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                      <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold">
                         {product.tag}
                       </span>
                     )}
-                    <Button 
-                      size="icon" 
-                      variant="secondary" 
-                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                       data-testid={`button-wishlist-${product.id}`}
                     >
-                      <Heart className="h-4 w-4" />
+                      <Heart className="h-3 w-3" />
                     </Button>
                   </div>
-                  <div className="p-5">
-                    <div className="flex items-center gap-1 mb-2">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{product.rating}</span>
-                      <span className="text-sm text-muted-foreground">({product.reviews})</span>
+                  <div className="p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                      <span className="text-xs font-medium">{product.rating}</span>
                     </div>
-                    <h3 className="font-display font-semibold mb-2 group-hover:text-primary transition-colors">
+                    <h3 className="font-medium text-sm mb-1 line-clamp-2 group-hover:text-primary transition-colors">
                       {product.name}
                     </h3>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-primary">৳{product.price}</span>
+                      <div>
+                        <span className="text-sm font-bold text-primary">৳{product.price}</span>
                         {product.originalPrice && (
-                          <span className="text-sm text-muted-foreground line-through">৳{product.originalPrice}</span>
+                          <span className="text-xs text-muted-foreground line-through ml-1">৳{product.originalPrice}</span>
                         )}
                       </div>
-                      <Button size="sm" className="bg-primary hover:bg-primary/90" data-testid={`button-add-cart-${product.id}`}>
-                        Add to Cart
-                      </Button>
                     </div>
                   </div>
                 </div>
