@@ -342,18 +342,48 @@ export default function Home() {
               </p>
             </div>
             {[
-              { title: "Shop", links: ["All Products", "Categories", "New Arrivals", "Best Sellers"] },
-              { title: "Company", links: ["About Us", "Our Story", "Blog", "Careers"] },
-              { title: "Support", links: ["Contact", "FAQs", "Shipping", "Returns"] },
+              {
+                title: "Shop",
+                links: [
+                  { label: "All Products", href: "/shop" },
+                  { label: "Categories", href: `${import.meta.env.BASE_URL}#categories` },
+                  { label: "New Arrivals", href: "/shop" },
+                  { label: "Best Sellers", href: "/shop" }
+                ]
+              },
+              {
+                title: "Company",
+                links: [
+                  { label: "About Us", href: `${import.meta.env.BASE_URL}#about` },
+                  { label: "Our Story", href: `${import.meta.env.BASE_URL}#about` },
+                  { label: "Blog", href: "#" },
+                  { label: "Careers", href: "#" }
+                ]
+              },
+              {
+                title: "Support",
+                links: [
+                  { label: "Contact", href: "#" },
+                  { label: "FAQs", href: "#" },
+                  { label: "Shipping", href: "#" },
+                  { label: "Returns", href: "#" }
+                ]
+              },
             ].map((section) => (
               <div key={section.title}>
                 <h4 className="font-display font-semibold mb-4">{section.title}</h4>
                 <ul className="space-y-2">
                   {section.links.map((link) => (
-                    <li key={link}>
-                      <a href="#" className="text-background/60 hover:text-background text-sm transition-colors">
-                        {link}
-                      </a>
+                    <li key={link.label}>
+                      {link.href.startsWith("/") && !link.href.includes("#") ? (
+                        <Link href={link.href} className="text-background/60 hover:text-background text-sm transition-colors cursor-pointer">
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a href={link.href} className="text-background/60 hover:text-background text-sm transition-colors">
+                          {link.label}
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>
