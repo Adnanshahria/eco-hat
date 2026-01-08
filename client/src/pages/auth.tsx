@@ -82,88 +82,213 @@ export default function Auth() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary/5 to-emerald-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm">
-                <div className="bg-white rounded-2xl shadow-xl border p-6">
-                    {/* Logo */}
-                    <div className="flex justify-center mb-6">
-                        <img src={import.meta.env.BASE_URL + "logo-en.png"} alt="EcoHaat" className="h-20" />
-                    </div>
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Animated Background Elements */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {/* Floating Leaves */}
+                <motion.div
+                    animate={{ y: [0, -20, 0], rotate: [0, 10, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute top-20 left-10 text-6xl opacity-20"
+                >🌿</motion.div>
+                <motion.div
+                    animate={{ y: [0, 15, 0], rotate: [0, -8, 0] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+                    className="absolute top-40 right-20 text-5xl opacity-15"
+                >🍃</motion.div>
+                <motion.div
+                    animate={{ y: [0, -12, 0], rotate: [0, 5, 0] }}
+                    transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                    className="absolute bottom-32 left-20 text-4xl opacity-20"
+                >🌱</motion.div>
+                <motion.div
+                    animate={{ y: [0, 18, 0], rotate: [0, -12, 0] }}
+                    transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+                    className="absolute bottom-20 right-10 text-5xl opacity-15"
+                >🌿</motion.div>
+
+                {/* Gradient Orbs */}
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-green-300/30 to-emerald-400/20 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-br from-teal-300/25 to-cyan-400/15 rounded-full blur-3xl"></div>
+            </div>
+
+            <motion.div
+                initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="w-full max-w-md relative z-10"
+            >
+                {/* Glassmorphism Card */}
+                <div className="glass rounded-3xl shadow-2xl p-8 border border-white/40">
+                    {/* Logo with Glow */}
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.2, duration: 0.4 }}
+                        className="flex justify-center mb-8"
+                    >
+                        <div className="relative">
+                            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150"></div>
+                            <img src={import.meta.env.BASE_URL + "logo-en.png"} alt="EcoHaat" className="h-24 relative z-10" />
+                        </div>
+                    </motion.div>
+
+                    {/* Welcome Text */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="text-center mb-6"
+                    >
+                        <h1 className="font-display text-2xl font-bold text-foreground mb-1">
+                            {mode === "login" ? "Welcome Back!" : "Join EcoHaat"}
+                        </h1>
+                        <p className="text-muted-foreground text-sm">
+                            {mode === "login" ? "Sign in to continue your eco journey" : "Start your sustainable shopping journey"}
+                        </p>
+                    </motion.div>
 
                     {/* Mode Toggle */}
-                    <div className="flex bg-muted rounded-lg p-1 mb-6">
+                    <div className="flex bg-muted/50 rounded-xl p-1.5 mb-6">
                         {(["login", "register"] as const).map(m => (
-                            <button
+                            <motion.button
                                 key={m}
                                 onClick={() => setMode(m)}
-                                className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition ${mode === m ? "bg-white shadow text-foreground" : "text-muted-foreground"}`}
+                                className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${mode === m ? "bg-white shadow-md text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                                whileTap={{ scale: 0.98 }}
                             >
-                                {m === "login" ? "Login" : "Register"}
-                            </button>
+                                {m === "login" ? "Sign In" : "Create Account"}
+                            </motion.button>
                         ))}
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-5">
                         {mode === "register" && (
-                            <div>
-                                <Label htmlFor="fullName" className="text-sm">Your Name</Label>
-                                <div className="relative mt-1">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <Input id="fullName" placeholder="Your full name" value={fullName} onChange={e => setFullName(e.target.value)} className="pl-9 h-10" required />
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                            >
+                                <Label htmlFor="fullName" className="text-sm font-medium">Your Name</Label>
+                                <div className="relative mt-1.5">
+                                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="fullName"
+                                        placeholder="Your full name"
+                                        value={fullName}
+                                        onChange={e => setFullName(e.target.value)}
+                                        className="pl-10 h-12 rounded-xl bg-white/50 border-white/60 focus:bg-white focus:border-primary/40 transition-all"
+                                        required
+                                    />
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1">This will be your display name (can change later)</p>
-                            </div>
+                            </motion.div>
                         )}
 
                         <div>
-                            <Label htmlFor="email" className="text-sm">Email</Label>
-                            <div className="relative mt-1">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} className="pl-9 h-10" required />
+                            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                            <div className="relative mt-1.5">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    value={email}
+                                    onChange={e => setEmail(e.target.value)}
+                                    className="pl-10 h-12 rounded-xl bg-white/50 border-white/60 focus:bg-white focus:border-primary/40 transition-all"
+                                    required
+                                />
                             </div>
                         </div>
 
                         <div>
-                            <Label htmlFor="password" className="text-sm">Password</Label>
-                            <div className="relative mt-1">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input id="password" type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} className="pl-9 h-10" required minLength={6} />
+                            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                            <div className="relative mt-1.5">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    className="pl-10 h-12 rounded-xl bg-white/50 border-white/60 focus:bg-white focus:border-primary/40 transition-all"
+                                    required
+                                    minLength={6}
+                                />
                             </div>
                         </div>
 
                         {mode === "register" && (
-                            <div>
-                                <Label className="text-sm">I want to</Label>
-                                <div className="flex gap-2 mt-1">
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 0.1 }}
+                            >
+                                <Label className="text-sm font-medium">I want to</Label>
+                                <div className="flex gap-3 mt-2">
                                     {(["buyer", "seller"] as const).map(r => (
-                                        <button
+                                        <motion.button
                                             key={r}
                                             type="button"
                                             onClick={() => setRole(r)}
-                                            className={`flex-1 py-2.5 rounded-lg border-2 text-sm font-medium transition ${role === r ? "border-primary bg-primary/5 text-primary" : "border-border hover:border-primary/50"}`}
+                                            className={`flex-1 py-3.5 rounded-xl border-2 text-sm font-semibold transition-all duration-300 ${role === r ? "border-primary bg-primary/10 text-primary shadow-md" : "border-border/50 bg-white/30 hover:border-primary/40 hover:bg-white/50"}`}
+                                            whileTap={{ scale: 0.98 }}
                                         >
-                                            {r === "buyer" ? "🛒 Buy" : "🏪 Sell"} Products
-                                        </button>
+                                            <span className="text-lg mr-1">{r === "buyer" ? "🛒" : "🏪"}</span> {r === "buyer" ? "Buy" : "Sell"} Products
+                                        </motion.button>
                                     ))}
                                 </div>
-                            </div>
+                            </motion.div>
                         )}
 
-                        {error && <div className="p-2 rounded bg-destructive/10 text-destructive text-sm">{error}</div>}
+                        {error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="p-3 rounded-xl bg-destructive/10 text-destructive text-sm font-medium border border-destructive/20"
+                            >
+                                {error}
+                            </motion.div>
+                        )}
 
-                        <Button type="submit" className="w-full h-10 bg-primary hover:bg-primary/90 font-medium" disabled={loading}>
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{mode === "login" ? "Sign In" : "Create Account"}<ArrowRight className="ml-2 h-4 w-4" /></>}
+                        <Button
+                            type="submit"
+                            className="w-full h-12 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90 font-semibold text-base rounded-xl shadow-lg shadow-primary/25 transition-all duration-300"
+                            disabled={loading}
+                        >
+                            {loading ? (
+                                <Loader2 className="h-5 w-5 animate-spin" />
+                            ) : (
+                                <>
+                                    {mode === "login" ? "Sign In" : "Create Account"}
+                                    <ArrowRight className="ml-2 h-5 w-5" />
+                                </>
+                            )}
                         </Button>
                     </form>
 
-                    <p className="text-center text-sm text-muted-foreground mt-4">
+                    <p className="text-center text-sm text-muted-foreground mt-6">
                         {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-                        <button onClick={() => setMode(mode === "login" ? "register" : "login")} className="text-primary font-medium hover:underline">
+                        <button
+                            onClick={() => setMode(mode === "login" ? "register" : "login")}
+                            className="text-primary font-semibold hover:underline underline-offset-2"
+                        >
                             {mode === "login" ? "Sign up" : "Sign in"}
                         </button>
                     </p>
                 </div>
+
+                {/* Eco Badge */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="text-center mt-6"
+                >
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur text-sm text-muted-foreground">
+                        <span className="text-lg">🌱</span> 100% Eco-Friendly Marketplace
+                    </span>
+                </motion.div>
             </motion.div>
         </div>
     );
