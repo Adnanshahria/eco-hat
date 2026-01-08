@@ -172,7 +172,7 @@ export default function SellerDashboard() {
             <div className="min-h-screen bg-background flex flex-col items-center p-8">
                 <div className="max-w-2xl w-full">
                     <div className="flex items-center gap-2 mb-8 justify-center">
-                        <img src="/logo-en.png" alt="EcoHaat" className="h-12" />
+                        <img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-12" />
                     </div>
 
                     <div className="bg-red-50 border-l-4 border-red-600 rounded-lg p-6 mb-6 shadow-sm">

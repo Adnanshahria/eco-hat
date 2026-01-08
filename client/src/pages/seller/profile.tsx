@@ -249,7 +249,7 @@ export default function SellerProfile() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <p className="text-sm text-muted-foreground">Please upload your NIC Card or Birth Registration Certificate (JPG, PNG, WebP, or PDF). Max file size: 5MB.</p>
+                                <p className="text-sm text-muted-foreground">Please upload your NID Card or Birth Registration Certificate (JPG, PNG, WebP, or PDF). Max file size: 5MB.</p>
 
                                 {/* Hidden file input */}
                                 <input
