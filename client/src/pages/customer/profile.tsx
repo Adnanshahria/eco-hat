@@ -27,6 +27,7 @@ interface UserProfile {
     email: string;
     phone: string | null;
     role: string;
+    is_super_admin?: boolean;
     bio: string | null;
     avatar_url: string | null;
     saved_addresses: SavedAddress[];
@@ -282,30 +283,7 @@ export default function Profile() {
                     </div>
                 </motion.div>
 
-                {/* Admin Access Panel - Conditionally Blurred for Non-Admins */}
-                <div className={`mb-6 p-4 rounded-xl border flex items-center justify-between transition-all ${profile.role === 'admin' || profile.role === 'super_admin' ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200 opacity-60 grayscale blur-[1px] select-none pointer-events-none'}`}>
-                    <div className="flex items-center gap-3">
-                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${profile.role === 'admin' ? 'bg-purple-100 text-purple-600' : 'bg-gray-200 text-gray-400'}`}>
-                            <LayoutDashboard className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <h3 className="font-semibold text-sm">Admin Dashboard</h3>
-                            <p className="text-xs text-muted-foreground">{profile.role === 'admin' ? "Manage users, products & orders" : "Restricted Access"}</p>
-                        </div>
-                    </div>
-                    {/* Link logic: Only render Link if admin, otherwise disabled button */}
-                    {profile.role === 'admin' || profile.role === 'super_admin' ? (
-                        <Link href="/admin">
-                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
-                                Enter Panel <ArrowLeft className="h-4 w-4 rotate-180" />
-                            </Button>
-                        </Link>
-                    ) : (
-                        <Button size="sm" variant="outline" disabled className="gap-2">
-                            Locked <ArrowLeft className="h-4 w-4 rotate-180" />
-                        </Button>
-                    )}
-                </div>
+
 
                 {/* Tabs */}
                 <div className="flex bg-white rounded-xl p-1 mb-4 border border-emerald-100">
@@ -488,10 +466,35 @@ export default function Profile() {
                 </AnimatePresence>
 
                 {/* Eco Badge */}
-                <div className="mt-6 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl p-4 text-white text-center">
+                <div className="mb-6 bg-gradient-to-r from-emerald-500 to-green-500 rounded-xl p-4 text-white text-center">
                     <Leaf className="h-8 w-8 mx-auto mb-2 opacity-80" />
                     <p className="font-medium">You're part of the EcoHaat family! 🌱</p>
                     <p className="text-sm opacity-80">Every purchase supports sustainable living</p>
+                </div>
+
+                {/* Admin Access Panel - Moved to Bottom */}
+                <div className={`p-4 rounded-xl border flex items-center justify-between transition-all ${profile.role === 'admin' || profile.is_super_admin ? 'bg-purple-50 border-purple-200 shadow-sm' : 'bg-gray-50 border-gray-200 opacity-60 grayscale blur-[1px] select-none pointer-events-none'}`}>
+                    <div className="flex items-center gap-3">
+                        <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${profile.role === 'admin' || profile.is_super_admin ? 'bg-purple-100 text-purple-600' : 'bg-gray-200 text-gray-400'}`}>
+                            <LayoutDashboard className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-sm">Admin Dashboard</h3>
+                            <p className="text-xs text-muted-foreground">{profile.role === 'admin' || profile.is_super_admin ? "Manage users, products & orders" : "Restricted Access"}</p>
+                        </div>
+                    </div>
+                    {/* Link logic */}
+                    {profile.role === 'admin' || profile.is_super_admin ? (
+                        <Link href="/admin">
+                            <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
+                                Enter Panel <ArrowLeft className="h-4 w-4 rotate-180" />
+                            </Button>
+                        </Link>
+                    ) : (
+                        <Button size="sm" variant="outline" disabled className="gap-2">
+                            Locked <ArrowLeft className="h-4 w-4 rotate-180" />
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>
