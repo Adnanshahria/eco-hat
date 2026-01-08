@@ -76,13 +76,17 @@ export default function Home() {
                 natural products from local artisans and ethical brands.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 font-display font-semibold text-base px-8" data-testid="button-shop-now">
-                  Shop Now
-                  <ChevronRight className="ml-2 h-5 w-5" />
-                </Button>
-                <Button size="lg" variant="outline" className="font-display font-medium text-base" data-testid="button-learn-more">
-                  Learn Our Story
-                </Button>
+                <Link href="/shop">
+                  <Button size="lg" className="bg-primary hover:bg-primary/90 font-display font-semibold text-base px-8 w-full sm:w-auto" data-testid="button-shop-now">
+                    Shop Now
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </Button>
+                </Link>
+                <a href={`${import.meta.env.BASE_URL}#contact`}>
+                  <Button size="lg" variant="outline" className="font-display font-medium text-base w-full sm:w-auto" data-testid="button-learn-more">
+                    Learn Our Story
+                  </Button>
+                </a>
               </div>
               <div className="flex items-center gap-8 mt-10 pt-8 border-t border-border/50">
                 <div>
