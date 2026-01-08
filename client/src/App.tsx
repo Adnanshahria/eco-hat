@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/components/auth-provider";
 import { CartProvider } from "@/lib/cart-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AdminRoute } from "@/components/admin-route";
 
 // Pages
 import NotFound from "@/pages/not-found";
@@ -48,7 +49,11 @@ function Router() {
       <Route path="/seller/profile" component={SellerProfile} />
 
       {/* Admin Routes */}
-      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
 
       {/* 404 */}
       <Route component={NotFound} />
