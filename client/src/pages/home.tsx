@@ -1,0 +1,452 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { 
+  Leaf, 
+  Recycle, 
+  Heart, 
+  ShoppingBag, 
+  Search, 
+  Menu, 
+  X,
+  TreeDeciduous,
+  Droplets,
+  Sun,
+  ChevronRight,
+  Star,
+  Truck,
+  Shield,
+  Users
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import logoEn from "@assets/Add_a_subheading_1767846566905.png";
+
+const categories = [
+  { id: 1, name: "Household", icon: TreeDeciduous, count: 45, color: "bg-emerald-100 text-emerald-700" },
+  { id: 2, name: "Personal Care", icon: Droplets, count: 32, color: "bg-teal-100 text-teal-700" },
+  { id: 3, name: "Kitchen", icon: Leaf, count: 28, color: "bg-lime-100 text-lime-700" },
+  { id: 4, name: "Kids & Baby", icon: Heart, count: 19, color: "bg-green-100 text-green-700" },
+  { id: 5, name: "Reusables", icon: Recycle, count: 56, color: "bg-emerald-100 text-emerald-700" },
+  { id: 6, name: "Garden", icon: Sun, count: 24, color: "bg-yellow-100 text-yellow-700" },
+];
+
+const featuredProducts = [
+  { id: 1, name: "Bamboo Toothbrush Set", price: 250, originalPrice: 350, rating: 4.8, reviews: 124, image: "🎋", tag: "Best Seller" },
+  { id: 2, name: "Organic Cotton Bag", price: 180, originalPrice: null, rating: 4.9, reviews: 89, image: "👜", tag: "New" },
+  { id: 3, name: "Natural Soap Bar", price: 120, originalPrice: 150, rating: 4.7, reviews: 203, image: "🧼", tag: "Popular" },
+  { id: 4, name: "Jute Storage Basket", price: 450, originalPrice: 550, rating: 4.6, reviews: 67, image: "🧺", tag: null },
+  { id: 5, name: "Coconut Bowl Set", price: 380, originalPrice: null, rating: 4.8, reviews: 156, image: "🥥", tag: "Trending" },
+  { id: 6, name: "Eco Paper Tissues", price: 95, originalPrice: 120, rating: 4.5, reviews: 312, image: "🧻", tag: null },
+];
+
+const testimonials = [
+  { id: 1, name: "Fatima Rahman", location: "Dhaka", text: "EcoHaat changed how I shop. Finally, a place where I can trust every product is truly eco-friendly!", avatar: "👩" },
+  { id: 2, name: "Kamal Hossain", location: "Chittagong", text: "The quality is amazing and knowing I'm helping local artisans makes it even better.", avatar: "👨" },
+  { id: 3, name: "Nusrat Jahan", location: "Sylhet", text: "My kids love the wooden toys! Safe, beautiful, and sustainable. Perfect!", avatar: "👩‍👧" },
+];
+
+export default function Home() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  return (
+    <div className="min-h-screen bg-background grain-texture">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 lg:h-20">
+            <div className="flex items-center gap-3">
+              <img src={logoEn} alt="EcoHaat" className="h-12 lg:h-14 w-auto" data-testid="img-logo" />
+            </div>
+
+            <nav className="hidden lg:flex items-center gap-8">
+              {["Shop", "Categories", "About", "Blog", "Contact"].map((item) => (
+                <a 
+                  key={item}
+                  href="#" 
+                  className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors"
+                  data-testid={`link-nav-${item.toLowerCase()}`}
+                >
+                  {item}
+                </a>
+              ))}
+            </nav>
+
+            <div className="hidden md:flex items-center gap-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search eco products..."
+                  className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  data-testid="input-search"
+                />
+              </div>
+              <Button variant="ghost" size="icon" className="relative" data-testid="button-cart">
+                <ShoppingBag className="h-5 w-5" />
+                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                  3
+                </span>
+              </Button>
+              <Button className="bg-primary hover:bg-primary/90 font-display font-medium" data-testid="button-signin">
+                Sign In
+              </Button>
+            </div>
+
+            <button 
+              className="lg:hidden p-2"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              data-testid="button-mobile-menu"
+            >
+              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
+        </div>
+
+        {mobileMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:hidden border-t border-border bg-background p-4"
+          >
+            <div className="flex flex-col gap-4">
+              <Input
+                type="search"
+                placeholder="Search eco products..."
+                className="bg-muted/50"
+                data-testid="input-search-mobile"
+              />
+              {["Shop", "Categories", "About", "Blog", "Contact"].map((item) => (
+                <a key={item} href="#" className="py-2 font-medium">{item}</a>
+              ))}
+              <Button className="w-full bg-primary">Sign In</Button>
+            </div>
+          </motion.div>
+        )}
+      </header>
+
+      <section className="relative overflow-hidden bg-gradient-natural leaf-pattern">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6 }}
+            >
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+                <Leaf className="h-4 w-4" />
+                100% Eco-Friendly Products
+              </span>
+              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                <span className="text-gradient-green">Sustainable</span> Products
+                <br />
+                <span className="text-foreground">for Everyday Life</span>
+              </h1>
+              <p className="text-lg text-muted-foreground mb-8 max-w-lg">
+                Bangladesh's first curated eco-marketplace. Discover plastic-free, 
+                natural products from local artisans and ethical brands.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="bg-primary hover:bg-primary/90 font-display font-semibold text-base px-8" data-testid="button-shop-now">
+                  Shop Now
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+                <Button size="lg" variant="outline" className="font-display font-medium text-base" data-testid="button-learn-more">
+                  Learn Our Story
+                </Button>
+              </div>
+              <div className="flex items-center gap-8 mt-10 pt-8 border-t border-border/50">
+                <div>
+                  <p className="text-2xl font-bold font-display text-primary">500+</p>
+                  <p className="text-sm text-muted-foreground">Eco Products</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold font-display text-primary">50+</p>
+                  <p className="text-sm text-muted-foreground">Local Brands</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold font-display text-primary">10K+</p>
+                  <p className="text-sm text-muted-foreground">Happy Customers</p>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative hidden lg:block"
+            >
+              <div className="relative w-full aspect-square max-w-lg mx-auto">
+                <div className="absolute inset-0 bg-gradient-leaf rounded-full opacity-20 blur-3xl"></div>
+                <div className="absolute inset-8 bg-card rounded-3xl shadow-2xl overflow-hidden border border-card-border">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center p-8">
+                      <div className="text-8xl mb-4">🌿</div>
+                      <p className="font-display text-xl font-semibold text-primary">Eco Living</p>
+                      <p className="text-sm text-muted-foreground mt-2">Starts Here</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Recycle className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Plastic-Free</p>
+                      <p className="text-xs text-muted-foreground">100% Guaranteed</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute -top-4 -right-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <Heart className="h-6 w-6 text-emerald-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">Made in BD</p>
+                      <p className="text-xs text-muted-foreground">Local Artisans</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 lg:py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">Shop by Category</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Explore our curated collection of sustainable products for every aspect of your life
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {categories.map((category, index) => (
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="group cursor-pointer"
+                data-testid={`card-category-${category.id}`}
+              >
+                <div className="bg-card rounded-2xl p-6 border border-card-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
+                  <div className={`h-14 w-14 rounded-xl ${category.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
+                    <category.icon className="h-7 w-7" />
+                  </div>
+                  <h3 className="font-display font-semibold mb-1">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground">{category.count} products</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 lg:py-20 bg-muted/30">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">Featured Products</h2>
+              <p className="text-muted-foreground">Handpicked sustainable essentials for conscious living</p>
+            </div>
+            <Button variant="outline" className="mt-4 md:mt-0" data-testid="button-view-all">
+              View All Products
+              <ChevronRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {featuredProducts.map((product, index) => (
+              <motion.div
+                key={product.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="group"
+                data-testid={`card-product-${product.id}`}
+              >
+                <div className="bg-card rounded-2xl overflow-hidden border border-card-border hover:shadow-xl transition-all duration-300">
+                  <div className="relative aspect-square bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
+                    <span className="text-7xl group-hover:scale-110 transition-transform duration-300">{product.image}</span>
+                    {product.tag && (
+                      <span className="absolute top-4 left-4 px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-semibold">
+                        {product.tag}
+                      </span>
+                    )}
+                    <Button 
+                      size="icon" 
+                      variant="secondary" 
+                      className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                      data-testid={`button-wishlist-${product.id}`}
+                    >
+                      <Heart className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="p-5">
+                    <div className="flex items-center gap-1 mb-2">
+                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                      <span className="text-sm font-medium">{product.rating}</span>
+                      <span className="text-sm text-muted-foreground">({product.reviews})</span>
+                    </div>
+                    <h3 className="font-display font-semibold mb-2 group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-primary">৳{product.price}</span>
+                        {product.originalPrice && (
+                          <span className="text-sm text-muted-foreground line-through">৳{product.originalPrice}</span>
+                        )}
+                      </div>
+                      <Button size="sm" className="bg-primary hover:bg-primary/90" data-testid={`button-add-cart-${product.id}`}>
+                        Add to Cart
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 lg:py-20 bg-gradient-leaf text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              { icon: Truck, title: "Free Delivery", desc: "On orders above ৳500" },
+              { icon: Recycle, title: "100% Eco-Friendly", desc: "Plastic-free packaging" },
+              { icon: Shield, title: "Quality Assured", desc: "Verified sustainable products" },
+              { icon: Users, title: "Local Support", desc: "Empowering BD artisans" },
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="h-16 w-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mx-auto mb-4">
+                  <item.icon className="h-8 w-8" />
+                </div>
+                <h3 className="font-display font-semibold text-lg mb-2">{item.title}</h3>
+                <p className="text-white/80 text-sm">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 lg:py-20 bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">What Our Customers Say</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Join thousands of eco-conscious shoppers making a difference
+            </p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.15 }}
+                className="bg-card rounded-2xl p-6 border border-card-border"
+                data-testid={`card-testimonial-${testimonial.id}`}
+              >
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                  ))}
+                </div>
+                <p className="text-foreground/80 mb-6 leading-relaxed">"{testimonial.text}"</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{testimonial.avatar}</span>
+                  <div>
+                    <p className="font-semibold">{testimonial.name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16 lg:py-20 bg-muted/30">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="bg-card rounded-3xl p-8 lg:p-12 border border-card-border shadow-xl">
+            <Leaf className="h-12 w-12 text-primary mx-auto mb-6" />
+            <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">Join the Green Movement</h2>
+            <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
+              Subscribe to get exclusive offers, eco-tips, and be the first to know about new sustainable products
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+              <Input
+                type="email"
+                placeholder="Enter your email"
+                className="flex-1 bg-muted/50"
+                data-testid="input-newsletter"
+              />
+              <Button className="bg-primary hover:bg-primary/90 font-display font-medium" data-testid="button-subscribe">
+                Subscribe
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              We respect your privacy. Unsubscribe anytime.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-foreground text-background py-12 lg:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <Leaf className="h-8 w-8 text-primary" />
+                <span className="font-display text-xl font-bold">EcoHaat</span>
+              </div>
+              <p className="text-background/60 text-sm leading-relaxed">
+                Bangladesh's trusted marketplace for sustainable, eco-friendly products. Making green living accessible.
+              </p>
+            </div>
+            {[
+              { title: "Shop", links: ["All Products", "Categories", "New Arrivals", "Best Sellers"] },
+              { title: "Company", links: ["About Us", "Our Story", "Blog", "Careers"] },
+              { title: "Support", links: ["Contact", "FAQs", "Shipping", "Returns"] },
+            ].map((section) => (
+              <div key={section.title}>
+                <h4 className="font-display font-semibold mb-4">{section.title}</h4>
+                <ul className="space-y-2">
+                  {section.links.map((link) => (
+                    <li key={link}>
+                      <a href="#" className="text-background/60 hover:text-background text-sm transition-colors">
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="pt-8 border-t border-background/10 flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-background/60 text-sm">
+              © 2026 EcoHaat. All rights reserved. টেকসই পণ্য সর্বত্র...
+            </p>
+            <div className="flex items-center gap-4">
+              <a href="#" className="text-background/60 hover:text-background text-sm">Privacy Policy</a>
+              <a href="#" className="text-background/60 hover:text-background text-sm">Terms of Service</a>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
