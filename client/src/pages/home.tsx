@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import logoEn from "@assets/Add_a_subheading_1767846566905.png";
+import logoBn from "@assets/Add_a_subheading(1)_1767846566910.png";
 
 const categories = [
   { id: 1, name: "Household", icon: TreeDeciduous, count: 45, color: "bg-emerald-100 text-emerald-700" },
@@ -55,7 +55,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             <div className="flex items-center gap-3">
-              <img src={logoEn} alt="EcoHaat" className="h-12 lg:h-14 w-auto" data-testid="img-logo" />
+              <img src={logoBn} alt="ইকো হাট" className="h-12 lg:h-14 w-auto" data-testid="img-logo" />
             </div>
 
             <nav className="hidden lg:flex items-center gap-8">
