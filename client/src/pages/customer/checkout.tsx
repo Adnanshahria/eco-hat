@@ -147,9 +147,10 @@ export default function Checkout() {
             await supabase.from("order_items").insert(orderItems);
             await clearCart();
             setLocation(`/shop/order-confirmation/${order.id}`);
-        } catch (err) {
+        } catch (err: any) {
             console.error("Checkout error:", err);
-            alert("Failed to place order. Please try again.");
+            console.error("Error details:", err?.message, err?.details, err?.hint);
+            alert(`Failed to place order: ${err?.message || "Unknown error"}. Please try again.`);
         } finally {
             setLoading(false);
         }
