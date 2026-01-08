@@ -256,7 +256,7 @@ export default function Profile() {
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
                 <div className="max-w-2xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <Link href="~/shop"><Button variant="ghost" size="icon" className="hover:bg-emerald-100"><ArrowLeft className="h-5 w-5 text-emerald-700" /></Button></Link>
+                        <Link href="/shop"><Button variant="ghost" size="icon" className="hover:bg-emerald-100"><ArrowLeft className="h-5 w-5 text-emerald-700" /></Button></Link>
                         <div className="flex items-center gap-2">
                             <Leaf className="h-5 w-5 text-emerald-600" />
                             <h1 className="text-xl font-bold text-emerald-800">My Profile</h1>
@@ -485,7 +485,7 @@ export default function Profile() {
                     </div>
                     {/* Link logic */}
                     {profile.role === 'admin' || profile.is_super_admin ? (
-                        <Link href="~/admin">
+                        <Link href="/admin">
                             <Button size="sm" className="bg-purple-600 hover:bg-purple-700 text-white gap-2">
                                 Enter Panel <ArrowLeft className="h-4 w-4 rotate-180" />
                             </Button>

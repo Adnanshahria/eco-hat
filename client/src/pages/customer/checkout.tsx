@@ -145,7 +145,7 @@ export default function Checkout() {
 
             await supabase.from("order_items").insert(orderItems);
             await clearCart();
-            setLocation(`~/shop/order-confirmation/${order.id}`);
+            setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err) {
             console.error("Checkout error:", err);
             alert("Failed to place order. Please try again.");
@@ -160,7 +160,7 @@ export default function Checkout() {
                 <div className="text-center">
                     <Leaf className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
                     <h2 className="text-xl font-semibold text-emerald-800 mb-2">Your cart is empty</h2>
-                    <Link href="~/shop"><Button className="bg-emerald-500 hover:bg-emerald-600">Go Shopping</Button></Link>
+                    <Link href="/shop"><Button className="bg-emerald-500 hover:bg-emerald-600">Go Shopping</Button></Link>
                 </div>
             </div>
         );
@@ -171,7 +171,7 @@ export default function Checkout() {
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <Link href="~/shop/cart"><Button variant="ghost" size="icon" className="hover:bg-emerald-100"><ArrowLeft className="h-5 w-5 text-emerald-700" /></Button></Link>
+                        <Link href="/shop/cart"><Button variant="ghost" size="icon" className="hover:bg-emerald-100"><ArrowLeft className="h-5 w-5 text-emerald-700" /></Button></Link>
                         <div className="flex items-center gap-2">
                             <Leaf className="h-5 w-5 text-emerald-600" />
                             <h1 className="text-xl font-bold text-emerald-800">Checkout</h1>

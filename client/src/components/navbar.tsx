@@ -41,7 +41,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                     </Link>
 
                     <nav className="hidden lg:flex items-center gap-6">
-                        <Link href="~/shop" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Shop</Link>
+                        <Link href="/shop" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Shop</Link>
                         <a href={`${import.meta.env.BASE_URL}#categories`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Categories</a>
                         <a href={`${import.meta.env.BASE_URL}#contact`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Contact Us</a>
                     </nav>
@@ -60,7 +60,7 @@ export function NavBar({ onSearch }: NavBarProps) {
 
                         {user && <NotificationCenter />}
 
-                        <Link href="~/shop/cart">
+                        <Link href="/shop/cart">
                             <Button variant="ghost" size="icon" className="relative">
                                 <ShoppingBag className="h-5 w-5" />
                                 {/* Cart Badge - can be connected to context */}
@@ -81,7 +81,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <Link href={user.role === 'admin' ? "~/admin" : user.role === 'seller' ? "~/seller" : "~/profile"}>
+                                    <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
                                         <DropdownMenuItem className="cursor-pointer">
                                             <LayoutDashboard className="mr-2 h-4 w-4" />
                                             <span>{user.role === 'admin' ? "Admin Panel" : user.role === 'seller' ? "Seller Dashboard" : "Profile"}</span>
@@ -95,7 +95,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Link href="~/auth">
+                            <Link href="/auth">
                                 <Button className="bg-primary hover:bg-primary/90 font-display font-medium">
                                     Sign In
                                 </Button>
@@ -147,7 +147,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                                 </Button>
                             </>
                         ) : (
-                            <Link href="~/auth"><Button className="w-full bg-primary">Sign In</Button></Link>
+                            <Link href="/auth"><Button className="w-full bg-primary">Sign In</Button></Link>
                         )}
                     </div>
                 </motion.div>

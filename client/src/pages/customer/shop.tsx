@@ -112,7 +112,7 @@ export default function CustomerShop() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3 }}
                         >
-                            <Link href="~/shop/orders">
+                            <Link href="/shop/orders">
                                 <Button variant="outline" className="gap-2 bg-white/60 backdrop-blur border-white/40 hover:bg-white/80 shadow-lg">
                                     <Package className="h-4 w-4" />
                                     My Orders

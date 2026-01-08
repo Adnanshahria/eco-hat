@@ -84,7 +84,7 @@ export default function CustomerOrders() {
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
-                        <Link href="~/shop"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
+                        <Link href="/shop"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
                         <h1 className="text-xl font-bold font-display">My Orders</h1>
                     </div>
                 </div>
@@ -98,7 +98,7 @@ export default function CustomerOrders() {
                         <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
                         <h2 className="text-xl font-semibold mb-2">No orders yet</h2>
                         <p className="text-muted-foreground mb-6">Start shopping to see your orders here!</p>
-                        <Link href="~/shop"><Button className="bg-primary">Start Shopping</Button></Link>
+                        <Link href="/shop"><Button className="bg-primary">Start Shopping</Button></Link>
                     </div>
                 ) : (
                     <div className="space-y-4">
