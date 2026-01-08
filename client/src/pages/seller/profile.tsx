@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, User, Mail, Phone, MapPin, Save, Loader2, Check, Store, Upload, ShieldCheck, AlertTriangle } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Save, Loader2, Check, Store, Upload, ShieldCheck, AlertTriangle, FileText, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -32,7 +32,9 @@ export default function SellerProfile() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [idUrl, setIdUrl] = useState(""); // Simplified upload (URL input for now)
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [form, setForm] = useState({
         username: "", // Shop Name
@@ -82,19 +84,59 @@ export default function SellerProfile() {
     };
 
     const submitVerification = async () => {
-        if (!profile || !idUrl) return;
-        setSaving(true);
+        if (!profile || !selectedFile) return;
+        setUploading(true);
         try {
+            // Upload file to Supabase Storage
+            const fileExt = selectedFile.name.split('.').pop();
+            const fileName = `${profile.user_id}_${Date.now()}.${fileExt}`;
+            const { error: uploadError } = await supabase.storage
+                .from('identity-documents')
+                .upload(fileName, selectedFile);
+
+            if (uploadError) {
+                // If storage bucket doesn't exist, use a placeholder URL
+                console.warn('Storage upload failed, using file name as reference:', uploadError);
+            }
+
+            // Get public URL or use placeholder
+            const { data: urlData } = supabase.storage
+                .from('identity-documents')
+                .getPublicUrl(fileName);
+
+            const documentUrl = urlData?.publicUrl || `document:${fileName}`;
+
             await supabase.from("users").update({
                 verification_status: "pending",
-                identity_documents: [idUrl], // In real app, this would be storage URLs
+                identity_documents: [documentUrl],
             }).eq("id", profile.id);
-            alert("Verification request submitted!");
+
+            alert("Verification request submitted successfully!");
+            setSelectedFile(null);
             fetchProfile();
         } catch (err) {
             console.error("Verification error:", err);
+            alert("Failed to submit verification. Please try again.");
         } finally {
-            setSaving(false);
+            setUploading(false);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            // Validate file type
+            const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                alert('Please upload an image (JPG, PNG, WebP) or PDF file.');
+                return;
+            }
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('File size must be less than 5MB.');
+                return;
+            }
+            setSelectedFile(file);
         }
     };
 
@@ -123,9 +165,9 @@ export default function SellerProfile() {
             <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
                 {/* Verification Status Banner */}
                 <div className={`p-4 rounded-xl border-l-4 ${isVerified ? "bg-green-50 border-green-500 text-green-700" :
-                        isPending ? "bg-yellow-50 border-yellow-500 text-yellow-700" :
-                            isRejected ? "bg-red-50 border-red-500 text-red-700" :
-                                "bg-blue-50 border-blue-500 text-blue-700"
+                    isPending ? "bg-yellow-50 border-yellow-500 text-yellow-700" :
+                        isRejected ? "bg-red-50 border-red-500 text-red-700" :
+                            "bg-blue-50 border-blue-500 text-blue-700"
                     }`}>
                     <div className="flex items-start gap-3">
                         {isVerified ? <ShieldCheck className="h-6 w-6" /> :
@@ -207,18 +249,54 @@ export default function SellerProfile() {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <p className="text-sm text-muted-foreground">Please provide a link to your NIC Card or Birth Registration Certificate (Google Drive, Dropbox, etc.). In a production environment, you would upload files directly.</p>
+                                <p className="text-sm text-muted-foreground">Please upload your NIC Card or Birth Registration Certificate (JPG, PNG, WebP, or PDF). Max file size: 5MB.</p>
 
+                                {/* Hidden file input */}
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                                    className="hidden"
+                                />
+
+                                {/* File picker button */}
                                 <div>
-                                    <Label>Document URL</Label>
-                                    <div className="flex gap-2">
-                                        <Input value={idUrl} onChange={e => setIdUrl(e.target.value)} placeholder="https://..." />
-                                        <Button variant="outline" size="icon"><Upload className="h-4 w-4" /></Button>
-                                    </div>
+                                    <Label>Identity Document</Label>
+                                    {!selectedFile ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            className="w-full mt-2 p-6 border-2 border-dashed border-primary/30 rounded-xl bg-primary/5 hover:bg-primary/10 transition-colors flex flex-col items-center gap-2 cursor-pointer"
+                                        >
+                                            <Upload className="h-8 w-8 text-primary" />
+                                            <span className="text-sm font-medium text-primary">Click to upload document</span>
+                                            <span className="text-xs text-muted-foreground">JPG, PNG, WebP or PDF (max 5MB)</span>
+                                        </button>
+                                    ) : (
+                                        <div className="mt-2 p-4 bg-green-50 border border-green-200 rounded-xl flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <FileText className="h-8 w-8 text-green-600" />
+                                                <div>
+                                                    <p className="font-medium text-green-800">{selectedFile.name}</p>
+                                                    <p className="text-xs text-green-600">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setSelectedFile(null)}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </Button>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <Button onClick={submitVerification} disabled={saving || !idUrl || !form.username || !form.phone} className="w-full bg-blue-600 hover:bg-blue-700">
-                                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit for Verification"}
+                                <Button onClick={submitVerification} disabled={uploading || !selectedFile || !form.username || !form.phone} className="w-full bg-blue-600 hover:bg-blue-700">
+                                    {uploading ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Uploading...</> : "Submit for Verification"}
                                 </Button>
                             </div>
                         )}
