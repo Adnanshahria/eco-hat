@@ -18,6 +18,7 @@ import Cart from "@/pages/customer/cart";
 import Checkout from "@/pages/customer/checkout";
 import OrderConfirmation from "@/pages/customer/order-confirmation";
 import CustomerOrders from "@/pages/customer/orders";
+import ProductDetail from "@/pages/customer/product-detail";
 import Profile from "@/pages/customer/profile";
 
 // Seller Pages
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/shop/cart" component={Cart} />
       <Route path="/shop/checkout" component={Checkout} />
       <Route path="/shop/order-confirmation/:id" component={OrderConfirmation} />
+      <Route path="/shop/product/:id" component={ProductDetail} />
       <Route path="/shop/orders" component={CustomerOrders} />
       <Route path="/profile" component={Profile} />
 

@@ -206,81 +206,83 @@ export default function CustomerShop() {
                                     transition={{ delay: index * 0.03, duration: 0.4 }}
                                     className="group"
                                 >
-                                    <div className="bg-white/70 backdrop-blur rounded-2xl overflow-hidden border border-white/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 card-shine">
-                                        <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center overflow-hidden">
-                                            {product.images?.[0] ? (
-                                                <img
-                                                    src={product.images[0]}
-                                                    alt={product.name}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                                                />
-                                            ) : (
-                                                <span className="text-5xl group-hover:scale-110 transition-transform duration-300">🌿</span>
-                                            )}
+                                    <Link href={`/shop/product/${product.id}`} className="block">
+                                        <div className="bg-white/70 backdrop-blur rounded-2xl overflow-hidden border border-white/40 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 card-shine cursor-pointer">
+                                            <div className="relative aspect-square bg-gradient-to-br from-muted/50 to-muted flex items-center justify-center overflow-hidden">
+                                                {product.images?.[0] ? (
+                                                    <img
+                                                        src={product.images[0]}
+                                                        alt={product.name}
+                                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                    />
+                                                ) : (
+                                                    <span className="text-5xl group-hover:scale-110 transition-transform duration-300">🌿</span>
+                                                )}
 
-                                            {/* Eco Badge */}
-                                            <div className="absolute top-3 left-3">
-                                                <span className="eco-badge">Eco</span>
-                                            </div>
-
-                                            {/* Wishlist Button */}
-                                            <Button
-                                                size="icon"
-                                                variant="secondary"
-                                                className="absolute top-3 right-3 h-9 w-9 rounded-xl bg-white/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-red-500 shadow-lg"
-                                            >
-                                                <Heart className="h-4 w-4" />
-                                            </Button>
-
-                                            {/* Discount Badge */}
-                                            {product.original_price && (
-                                                <div className="absolute bottom-3 left-3 px-2 py-1 rounded-lg bg-red-500 text-white text-xs font-bold">
-                                                    -{Math.round((1 - product.price / product.original_price) * 100)}%
+                                                {/* Eco Badge */}
+                                                <div className="absolute top-3 left-3">
+                                                    <span className="eco-badge">Eco</span>
                                                 </div>
-                                            )}
-                                        </div>
 
-                                        <div className="p-4">
-                                            <div className="flex items-center gap-1.5 mb-2">
-                                                <div className="flex items-center gap-0.5">
-                                                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                                    <Star className="h-3.5 w-3.5 fill-amber-200 text-amber-200" />
-                                                </div>
-                                                <span className="text-xs font-medium text-muted-foreground">(4.8)</span>
-                                            </div>
-
-                                            <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
-                                                {product.name}
-                                            </h3>
-
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <span className="text-lg font-bold text-primary">৳{product.price}</span>
-                                                    {product.original_price && (
-                                                        <span className="text-xs text-muted-foreground line-through ml-1.5">৳{product.original_price}</span>
-                                                    )}
-                                                </div>
+                                                {/* Wishlist Button */}
                                                 <Button
-                                                    size="sm"
-                                                    className={`h-9 px-4 rounded-xl font-semibold transition-all duration-300 ${addingProduct === product.id
-                                                        ? "bg-green-500 shadow-lg shadow-green-500/25"
-                                                        : "bg-gradient-to-r from-primary to-emerald-600 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                                                        }`}
-                                                    onClick={() => handleAddToCart(product)}
-                                                    disabled={addingProduct === product.id || product.stock === 0}
+                                                    size="icon"
+                                                    variant="secondary"
+                                                    className="absolute top-3 right-3 h-9 w-9 rounded-xl bg-white/80 backdrop-blur opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white hover:text-red-500 shadow-lg"
                                                 >
-                                                    {addingProduct === product.id ? (
-                                                        <Check className="h-4 w-4" />
-                                                    ) : (
-                                                        <ShoppingBag className="h-4 w-4" />
-                                                    )}
+                                                    <Heart className="h-4 w-4" />
                                                 </Button>
+
+                                                {/* Discount Badge */}
+                                                {product.original_price && (
+                                                    <div className="absolute bottom-3 left-3 px-2 py-1 rounded-lg bg-red-500 text-white text-xs font-bold">
+                                                        -{Math.round((1 - product.price / product.original_price) * 100)}%
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="p-4">
+                                                <div className="flex items-center gap-1.5 mb-2">
+                                                    <div className="flex items-center gap-0.5">
+                                                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                                                        <Star className="h-3.5 w-3.5 fill-amber-200 text-amber-200" />
+                                                    </div>
+                                                    <span className="text-xs font-medium text-muted-foreground">(4.8)</span>
+                                                </div>
+
+                                                <h3 className="font-semibold text-sm mb-2 line-clamp-2 group-hover:text-primary transition-colors duration-300">
+                                                    {product.name}
+                                                </h3>
+
+                                                <div className="flex items-center justify-between">
+                                                    <div>
+                                                        <span className="text-lg font-bold text-primary">৳{product.price}</span>
+                                                        {product.original_price && (
+                                                            <span className="text-xs text-muted-foreground line-through ml-1.5">৳{product.original_price}</span>
+                                                        )}
+                                                    </div>
+                                                    <Button
+                                                        size="sm"
+                                                        className={`h-9 px-4 rounded-xl font-semibold transition-all duration-300 ${addingProduct === product.id
+                                                            ? "bg-green-500 shadow-lg shadow-green-500/25"
+                                                            : "bg-gradient-to-r from-primary to-emerald-600 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                                                            }`}
+                                                        onClick={() => handleAddToCart(product)}
+                                                        disabled={addingProduct === product.id || product.stock === 0}
+                                                    >
+                                                        {addingProduct === product.id ? (
+                                                            <Check className="h-4 w-4" />
+                                                        ) : (
+                                                            <ShoppingBag className="h-4 w-4" />
+                                                        )}
+                                                    </Button>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </motion.div>
                             ))}
                         </div>
