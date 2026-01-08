@@ -76,7 +76,7 @@ export default function Home() {
                 natural products from local artisans and ethical brands.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/shop">
+                <Link href="~/shop">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 font-display font-semibold text-base px-8 w-full sm:w-auto" data-testid="button-shop-now">
                     Shop Now
                     <ChevronRight className="ml-2 h-5 w-5" />
@@ -390,10 +390,10 @@ export default function Home() {
               {
                 title: "Shop",
                 links: [
-                  { label: "All Products", href: "/shop" },
+                  { label: "All Products", href: "~/shop" },
                   { label: "Categories", href: `${import.meta.env.BASE_URL}#categories` },
-                  { label: "New Arrivals", href: "/shop" },
-                  { label: "Best Sellers", href: "/shop" }
+                  { label: "New Arrivals", href: "~/shop" },
+                  { label: "Best Sellers", href: "~/shop" }
                 ]
               },
               {

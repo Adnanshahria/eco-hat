@@ -112,7 +112,7 @@ export default function CustomerShop() {
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3 }}
                         >
-                            <Link href="/shop/orders">
+                            <Link href="~/shop/orders">
                                 <Button variant="outline" className="gap-2 bg-white/60 backdrop-blur border-white/40 hover:bg-white/80 shadow-lg">
                                     <Package className="h-4 w-4" />
                                     My Orders
@@ -132,8 +132,8 @@ export default function CustomerShop() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setSelectedCategory(null)}
                             className={`px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm ${selectedCategory === null
-                                    ? "bg-gradient-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/25"
-                                    : "bg-white/70 backdrop-blur border border-white/40 hover:bg-white hover:shadow-md"
+                                ? "bg-gradient-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/25"
+                                : "bg-white/70 backdrop-blur border border-white/40 hover:bg-white hover:shadow-md"
                                 }`}
                         >
                             ✨ All Products
@@ -148,8 +148,8 @@ export default function CustomerShop() {
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setSelectedCategory(category.id)}
                                 className={`px-6 py-3 rounded-2xl text-sm font-semibold whitespace-nowrap transition-all duration-300 shadow-sm ${selectedCategory === category.id
-                                        ? "bg-gradient-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/25"
-                                        : "bg-white/70 backdrop-blur border border-white/40 hover:bg-white hover:shadow-md"
+                                    ? "bg-gradient-to-r from-primary to-emerald-600 text-white shadow-lg shadow-primary/25"
+                                    : "bg-white/70 backdrop-blur border border-white/40 hover:bg-white hover:shadow-md"
                                     }`}
                             >
                                 {category.icon && <span className="mr-1">{category.icon}</span>}
@@ -266,8 +266,8 @@ export default function CustomerShop() {
                                                 <Button
                                                     size="sm"
                                                     className={`h-9 px-4 rounded-xl font-semibold transition-all duration-300 ${addingProduct === product.id
-                                                            ? "bg-green-500 shadow-lg shadow-green-500/25"
-                                                            : "bg-gradient-to-r from-primary to-emerald-600 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                                                        ? "bg-green-500 shadow-lg shadow-green-500/25"
+                                                        : "bg-gradient-to-r from-primary to-emerald-600 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                                                         }`}
                                                     onClick={() => handleAddToCart(product)}
                                                     disabled={addingProduct === product.id || product.stock === 0}
