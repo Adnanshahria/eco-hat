@@ -53,11 +53,11 @@
 }
 
 :root {
-  --button-outline: rgba(0,0,0, .10);
-  --badge-outline: rgba(0,0,0, .05);
+  --button-outline: rgba(0, 0, 0, .10);
+  --badge-outline: rgba(0, 0, 0, .05);
   --opaque-button-border-intensity: -8;
-  --elevate-1: rgba(0,0,0, .03);
-  --elevate-2: rgba(0,0,0, .08);
+  --elevate-1: rgba(0, 0, 0, .03);
+  --elevate-2: rgba(0, 0, 0, .08);
 
   /* EcoHaat Green Natural Theme */
   --background: 60 30% 96%;
@@ -128,11 +128,11 @@
 }
 
 .dark {
-  --button-outline: rgba(255,255,255, .10);
-  --badge-outline: rgba(255,255,255, .05);
+  --button-outline: rgba(255, 255, 255, .10);
+  --badge-outline: rgba(255, 255, 255, .05);
   --opaque-button-border-intensity: 9;
-  --elevate-1: rgba(255,255,255, .04);
-  --elevate-2: rgba(255,255,255, .09);
+  --elevate-1: rgba(255, 255, 255, .04);
+  --elevate-2: rgba(255, 255, 255, .09);
 
   --background: 150 20% 8%;
   --foreground: 60 30% 95%;
@@ -183,6 +183,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
   }
@@ -192,7 +193,7 @@
   .font-display {
     font-family: var(--font-display);
   }
-  
+
   .font-serif {
     font-family: var(--font-serif);
   }
@@ -215,7 +216,7 @@
   .grain-texture {
     position: relative;
   }
-  
+
   .grain-texture::before {
     content: "";
     position: absolute;
@@ -240,8 +241,11 @@
     pointer-events: none;
   }
 
-  .no-default-hover-elevate {}
-  .no-default-active-elevate {}
+  .no-default-hover-elevate,
+  .no-default-active-elevate {
+    /* Utility classes used to disable default elevation behavior */
+    visibility: inherit;
+  }
 
   .toggle-elevate::before,
   .toggle-elevate-2::before {
@@ -324,13 +328,27 @@
 
   /* Floating Animation */
   @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   @keyframes float-slow {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-15px) rotate(3deg); }
+
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+      transform: translateY(-15px) rotate(3deg);
+    }
   }
 
   .animate-float {
@@ -343,8 +361,15 @@
 
   /* Pulse Glow */
   @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 5px hsl(142 45% 35% / 0.4); }
-    50% { box-shadow: 0 0 20px hsl(142 45% 35% / 0.6), 0 0 40px hsl(142 45% 35% / 0.3); }
+
+    0%,
+    100% {
+      box-shadow: 0 0 5px hsl(142 45% 35% / 0.4);
+    }
+
+    50% {
+      box-shadow: 0 0 20px hsl(142 45% 35% / 0.6), 0 0 40px hsl(142 45% 35% / 0.3);
+    }
   }
 
   .animate-pulse-glow {
@@ -353,9 +378,17 @@
 
   /* Gradient Animation */
   @keyframes gradient-shift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+
+    50% {
+      background-position: 100% 50%;
+    }
+
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   .animate-gradient {
@@ -365,15 +398,20 @@
 
   /* Shimmer Loading */
   @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   .animate-shimmer {
-    background: linear-gradient(90deg, 
-      hsl(var(--muted)) 0%, 
-      hsl(var(--muted) / 0.5) 50%, 
-      hsl(var(--muted)) 100%);
+    background: linear-gradient(90deg,
+        hsl(var(--muted)) 0%,
+        hsl(var(--muted) / 0.5) 50%,
+        hsl(var(--muted)) 100%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
   }
@@ -431,12 +469,10 @@
     left: -50%;
     width: 200%;
     height: 200%;
-    background: linear-gradient(
-      to bottom right,
-      rgba(255, 255, 255, 0) 0%,
-      rgba(255, 255, 255, 0.1) 50%,
-      rgba(255, 255, 255, 0) 100%
-    );
+    background: linear-gradient(to bottom right,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.1) 50%,
+        rgba(255, 255, 255, 0) 100%);
     transform: rotate(45deg) translateX(-100%);
     transition: transform 0.6s ease;
   }
@@ -476,34 +512,52 @@
   /* Nature Divider */
   .nature-divider {
     height: 4px;
-    background: linear-gradient(90deg, 
-      transparent 0%, 
-      hsl(142 45% 35%) 20%, 
-      hsl(80 55% 45%) 50%, 
-      hsl(142 45% 35%) 80%, 
-      transparent 100%);
+    background: linear-gradient(90deg,
+        transparent 0%,
+        hsl(142 45% 35%) 20%,
+        hsl(80 55% 45%) 50%,
+        hsl(142 45% 35%) 80%,
+        transparent 100%);
     border-radius: 2px;
     opacity: 0.5;
   }
 
   /* Stagger Animation for Lists */
-  .stagger-fade-in > * {
+  .stagger-fade-in>* {
     opacity: 0;
     animation: fadeInUp 0.5s ease forwards;
   }
 
-  .stagger-fade-in > *:nth-child(1) { animation-delay: 0.1s; }
-  .stagger-fade-in > *:nth-child(2) { animation-delay: 0.2s; }
-  .stagger-fade-in > *:nth-child(3) { animation-delay: 0.3s; }
-  .stagger-fade-in > *:nth-child(4) { animation-delay: 0.4s; }
-  .stagger-fade-in > *:nth-child(5) { animation-delay: 0.5s; }
-  .stagger-fade-in > *:nth-child(6) { animation-delay: 0.6s; }
+  .stagger-fade-in>*:nth-child(1) {
+    animation-delay: 0.1s;
+  }
+
+  .stagger-fade-in>*:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .stagger-fade-in>*:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+
+  .stagger-fade-in>*:nth-child(4) {
+    animation-delay: 0.4s;
+  }
+
+  .stagger-fade-in>*:nth-child(5) {
+    animation-delay: 0.5s;
+  }
+
+  .stagger-fade-in>*:nth-child(6) {
+    animation-delay: 0.6s;
+  }
 
   @keyframes fadeInUp {
     from {
       opacity: 0;
       transform: translateY(20px);
     }
+
     to {
       opacity: 1;
       transform: translateY(0);
@@ -528,5 +582,162 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--primary) / 0.7);
+  }
+
+  /* ===== MOBILE OPTIMIZATIONS ===== */
+
+  /* Reduced Motion Support - Accessibility First */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    .animate-float,
+    .animate-float-slow,
+    .animate-pulse-glow,
+    .animate-gradient,
+    .animate-shimmer {
+      animation: none !important;
+    }
+  }
+
+  /* Mobile Viewport Fix - handles iOS Safari 100vh issue */
+  .min-h-screen-mobile {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .h-screen-mobile {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Touch-Friendly Utilities */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  /* Prevent Text Selection on Interactive Elements (Mobile) */
+  .no-select {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  /* Performance Optimizations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .content-visibility-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 500px;
+  }
+
+  /* Mobile Scroll Performance */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-smooth-mobile {
+      scroll-behavior: auto;
+    }
+  }
+
+  /* Safe Area Insets for Notched Phones */
+  .safe-area-inset-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-inset-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-inset-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  .safe-area-insets {
+    padding-top: env(safe-area-inset-top);
+    padding-right: env(safe-area-inset-right);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+  }
+
+  /* Mobile-Specific Scrollbar (thinner) */
+  @media (max-width: 768px) {
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--primary) / 0.3);
+    }
+  }
+
+  /* Faster Animations on Mobile */
+  @media (max-width: 768px) {
+
+    .hover-scale:hover,
+    .hover-lift:hover {
+      transform: none;
+    }
+
+    /* Reduce animation complexity on mobile */
+    .stagger-fade-in>* {
+      animation-duration: 0.3s;
+    }
+
+    /* Disable complex hover animations that cause jank */
+    .card-shine::after {
+      display: none;
+    }
+
+    /* Reduce blur on mobile for better performance */
+    .glass,
+    .glass-dark,
+    .glass-subtle {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  }
+
+  /* Improve tap highlight on mobile */
+  @media (hover: none) and (pointer: coarse) {
+
+    button,
+    a,
+    [role="button"] {
+      -webkit-tap-highlight-color: hsl(var(--primary) / 0.1);
+    }
+  }
+
+  /* Active state visual feedback for touch */
+  @media (hover: none) and (pointer: coarse) {
+
+    .hover-elevate:active::after,
+    .hover-elevate-2:active::after {
+      background-color: var(--elevate-2);
+    }
   }
 }

@@ -122,11 +122,11 @@ export function NavBar({ onSearch }: NavBarProps) {
                         <Input
                             type="search"
                             placeholder="Search eco products..."
-                            className="bg-muted/50"
+                            className="bg-muted/50 touch-target"
                         />
-                        <Link href="/shop" className="py-2 font-medium">Shop</Link>
-                        <a href={`${import.meta.env.BASE_URL}#categories`} className="py-2 font-medium">Categories</a>
-                        <a href={`${import.meta.env.BASE_URL}#contact`} className="py-2 font-medium">Contact Us</a>
+                        <Link href="/shop" className="py-3 font-medium touch-manipulation touch-target flex items-center">Shop</Link>
+                        <a href={`${import.meta.env.BASE_URL}#categories`} className="py-3 font-medium touch-manipulation touch-target flex items-center">Categories</a>
+                        <a href={`${import.meta.env.BASE_URL}#contact`} className="py-3 font-medium touch-manipulation touch-target flex items-center">Contact Us</a>
                         {user && (
                             <div className="py-2 flex items-center justify-between">
                                 <span className="font-medium">Notifications</span>

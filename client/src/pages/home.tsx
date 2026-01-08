@@ -51,7 +51,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
-    <div className="min-h-screen bg-background grain-texture">
+    <div className="min-h-screen bg-background grain-texture scroll-smooth-mobile safe-area-insets">
       <NavBar />
 
       <section className="relative overflow-hidden bg-gradient-natural leaf-pattern">
@@ -158,9 +158,10 @@ export default function Home() {
               <motion.div
                 key={category.id}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="group cursor-pointer"
+                className="group cursor-pointer touch-manipulation"
                 data-testid={`card-category-${category.id}`}
               >
                 <div className="bg-card rounded-2xl p-6 border border-card-border hover:border-primary/30 hover:shadow-lg transition-all duration-300">
@@ -193,9 +194,10 @@ export default function Home() {
               <motion.div
                 key={product.id}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="group"
+                className="group touch-manipulation"
                 data-testid={`card-product-${product.id}`}
               >
                 <div className="bg-card rounded-xl overflow-hidden border border-card-border hover:shadow-lg transition-all duration-300">
@@ -317,9 +319,10 @@ export default function Home() {
               <motion.div
                 key={testimonial.id}
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: index * 0.15 }}
-                className="bg-card rounded-2xl p-6 border border-card-border"
+                className="bg-card rounded-2xl p-6 border border-card-border touch-manipulation"
                 data-testid={`card-testimonial-${testimonial.id}`}
               >
                 <div className="flex items-center gap-1 mb-4">
