@@ -145,7 +145,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 lg:py-20 bg-background">
+      <section id="categories" className="py-16 lg:py-20 bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="font-display text-3xl lg:text-4xl font-bold mb-4">Shop by Category</h2>
@@ -239,7 +239,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="py-16 lg:py-20 bg-gradient-leaf text-white">
+      <section id="about" className="py-16 lg:py-20 bg-gradient-leaf text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
