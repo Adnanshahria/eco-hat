@@ -65,8 +65,14 @@ export default function Profile() {
     useEffect(() => { fetchProfile(); }, [user]);
 
     const fetchProfile = async () => {
-        if (!user?.email) return;
-        const { data } = await supabase.from("users").select("*").eq("email", user.email).single();
+        console.log("Fetching profile for user:", user);
+        if (!user?.email) {
+            console.log("No user email found");
+            return;
+        }
+        const { data, error } = await supabase.from("users").select("*").eq("email", user.email).single();
+        console.log("Profile fetch result:", { data, error });
+
         if (data) {
             setProfile(data);
             setForm({
@@ -149,6 +155,41 @@ export default function Profile() {
         }
     };
 
+    const createProfile = async () => {
+        setSaving(true);
+        try {
+            // Generate ID logic (simplified)
+            const prefix = "USR";
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+            const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+            const newUserId = `${prefix}-${dateStr}-${random}`;
+
+            const newProfile = {
+                user_id: newUserId,
+                username: form.username || user?.email?.split("@")[0] || "User",
+                full_name: form.full_name || "New User",
+                email: user!.email!,
+                phone: form.phone,
+                bio: form.bio,
+                role: "buyer"
+            };
+
+            const { data, error } = await supabase.from("users").insert(newProfile).select().single();
+
+            if (error) throw error;
+            if (data) {
+                setProfile(data);
+                setSaved(true);
+                setTimeout(() => setSaved(false), 2000);
+            }
+        } catch (err: any) {
+            console.error("Create profile error:", err);
+            alert("Failed to create profile: " + err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center">
@@ -162,8 +203,46 @@ export default function Profile() {
 
     if (!profile) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center">
-                <p className="text-muted-foreground">Profile not found</p>
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-4">
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-8 max-w-md w-full">
+                    <div className="text-center mb-6">
+                        <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <User className="h-8 w-8 text-emerald-600" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-emerald-900">Complete Your Profile</h2>
+                        <p className="text-muted-foreground mt-2">It looks like your profile details are missing. Please let us know a bit about you to continue.</p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div>
+                            <Label>Full Name</Label>
+                            <Input
+                                placeholder="Your Name"
+                                value={form.full_name}
+                                onChange={e => setForm({ ...form, full_name: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <Label>Username</Label>
+                            <Input
+                                placeholder="Username"
+                                value={form.username}
+                                onChange={e => setForm({ ...form, username: e.target.value })}
+                            />
+                        </div>
+                        <div>
+                            <Label>Phone</Label>
+                            <Input
+                                placeholder="Phone Number"
+                                value={form.phone}
+                                onChange={e => setForm({ ...form, phone: e.target.value })}
+                            />
+                        </div>
+                        <Button onClick={createProfile} disabled={saving} className="w-full bg-emerald-600 hover:bg-emerald-700">
+                            {saving ? <Loader2 className="animate-spin" /> : "Create Profile"}
+                        </Button>
+                    </div>
+                </motion.div>
             </div>
         );
     }

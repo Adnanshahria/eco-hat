@@ -1,3 +1,7 @@
+-- =====================================================
+-- 1. DATABASE SETUP (TABLES)
+-- =====================================================
+
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     user_id TEXT UNIQUE,
@@ -99,6 +103,10 @@ CREATE TABLE IF NOT EXISTS cart_items (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- =====================================================
+-- 2. SEED DATA (CATEGORIES)
+-- =====================================================
+
 INSERT INTO categories (name, slug, description, icon, color) VALUES
     ('Household', 'household', 'Eco-friendly household items', 'TreeDeciduous', 'bg-emerald-100'),
     ('Personal Care', 'personal-care', 'Natural personal care products', 'Droplets', 'bg-teal-100'),
@@ -107,3 +115,22 @@ INSERT INTO categories (name, slug, description, icon, color) VALUES
     ('Reusables', 'reusables', 'Reusable everyday items', 'Recycle', 'bg-emerald-100'),
     ('Garden', 'garden', 'Garden and outdoor items', 'Sun', 'bg-yellow-100')
 ON CONFLICT (slug) DO NOTHING;
+
+-- =====================================================
+-- 3. ADMIN SETUP INSTRUCTIONS
+-- =====================================================
+
+-- Add is_super_admin column if not exists (redundant with CREATE TABLE but safe to keep for migrations)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_super_admin BOOLEAN DEFAULT FALSE;
+
+/* 
+-- UNCOMMENT AND RUN THIS SECTION TO MAKE YOURSELF ADMIN
+-- Replace 'your-email@example.com' with your actual email
+
+UPDATE users 
+SET role = 'admin', is_super_admin = TRUE 
+WHERE email = 'your-email@example.com';
+*/
+
+-- Check admins
+-- SELECT id, username, email, role, is_super_admin FROM users WHERE is_super_admin = TRUE;

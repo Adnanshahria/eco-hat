@@ -54,7 +54,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from("users")
                 .select("id")
                 .eq("email", user.email)
@@ -62,7 +62,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
             if (data) {
                 setUserId(data.id);
+            } else {
+                console.error("CartContext: Failed to fetch user ID", error);
             }
+            // Ensure loading is set to false after attempting to get user ID
+            // If we have a userId, 'refreshCart' will trigger and handle loading state there.
+            // But if we failed to get userId, we should stop loading here.
+            if (!data) setLoading(false);
         };
 
         fetchUserId();

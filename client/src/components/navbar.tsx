@@ -1,18 +1,36 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import {
-    Menu, X, Search, ShoppingBag, Leaf
+    Menu, X, Search, ShoppingBag, Leaf, User as UserIcon, LogOut, LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { NotificationCenter } from "./notifications";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-export function NavBar() {
+interface NavBarProps {
+    onSearch?: (query: string) => void;
+}
+
+export function NavBar({ onSearch }: NavBarProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const { user } = useAuth();
+    const { user, signOut } = useAuth(); // Get signOut
+
+    const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+        if (onSearch) onSearch(query);
+    };
 
     return (
         <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
@@ -36,7 +54,7 @@ export function NavBar() {
                                 placeholder="Search eco products..."
                                 className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onChange={handleSearch}
                             />
                         </div>
 
@@ -53,11 +71,29 @@ export function NavBar() {
                         </Link>
 
                         {user ? (
-                            <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
-                                <Button className="bg-primary hover:bg-primary/90 font-display font-medium">
-                                    {user.role === 'admin' ? "Admin" : user.role === 'seller' ? "Dashboard" : "Profile"}
-                                </Button>
-                            </Link>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
+                                        <UserIcon className="h-4 w-4" />
+                                        <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
+                                        <DropdownMenuItem className="cursor-pointer">
+                                            <LayoutDashboard className="mr-2 h-4 w-4" />
+                                            <span>{user.role === 'admin' ? "Admin Panel" : user.role === 'seller' ? "Seller Dashboard" : "Profile"}</span>
+                                        </DropdownMenuItem>
+                                    </Link>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span>Log out</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         ) : (
                             <Link href="/auth">
                                 <Button className="bg-primary hover:bg-primary/90 font-display font-medium">
@@ -98,9 +134,18 @@ export function NavBar() {
                             </div>
                         )}
                         {user ? (
-                            <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
-                                <Button className="w-full bg-primary">My Account</Button>
-                            </Link>
+                            <>
+                                <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
+                                    <Button className="w-full bg-primary mb-2">
+                                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                                        {user.role === 'admin' ? "Admin Panel" : user.role === 'seller' ? "Dashboard" : "Profile"}
+                                    </Button>
+                                </Link>
+                                <Button variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => signOut()}>
+                                    <LogOut className="mr-2 h-4 w-4" />
+                                    Log out
+                                </Button>
+                            </>
                         ) : (
                             <Link href="/auth"><Button className="w-full bg-primary">Sign In</Button></Link>
                         )}

@@ -7,6 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/lib/cart-context";
 import { supabase } from "@/lib/supabase";
 import { Link } from "wouter";
+import { NavBar } from "@/components/navbar";
 
 interface Product {
     id: number;
@@ -70,46 +71,7 @@ export default function CustomerShop() {
     return (
         <div className="min-h-screen bg-background">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex items-center justify-between h-16">
-                        <Link href="/" className="flex items-center gap-2">
-                            <img src="/logo-en.png" alt="EcoHaat" className="h-10" />
-                        </Link>
-
-                        <div className="hidden md:flex items-center gap-4 flex-1 max-w-xl mx-8">
-                            <div className="relative w-full">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    type="search"
-                                    placeholder="Search eco products..."
-                                    className="pl-10 w-full"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                            <Link href="/shop/cart">
-                                <Button variant="ghost" size="icon" className="relative">
-                                    <ShoppingBag className="h-5 w-5" />
-                                    {itemCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                                            {itemCount}
-                                        </span>
-                                    )}
-                                </Button>
-                            </Link>
-                            <div className="h-6 w-px bg-border" />
-                            <Button variant="ghost" size="sm" onClick={signOut}>
-                                <LogOut className="h-4 w-4 mr-2" />
-                                Logout
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-            </header>
+            <NavBar onSearch={setSearchQuery} />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Welcome Banner */}
