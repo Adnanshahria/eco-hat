@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 import { NavBar } from "@/components/navbar";
 
 const categories = [

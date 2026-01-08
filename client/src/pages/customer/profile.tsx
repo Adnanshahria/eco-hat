@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 
 interface SavedAddress {
     id: string;

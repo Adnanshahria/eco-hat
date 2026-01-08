@@ -3,7 +3,8 @@ import { motion } from "framer-motion";
 import { Check, Package, Truck, Home, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
-import { Link, useParams } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
+import { useParams } from "wouter";
 
 interface Order {
     id: number;

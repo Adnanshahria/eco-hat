@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 
 export default function Cart() {
     const { items, loading, removeFromCart, updateQuantity, total, itemCount } = useCart();

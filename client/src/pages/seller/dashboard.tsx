@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 import { createNotification } from "@/components/notifications";
 
 interface Product {

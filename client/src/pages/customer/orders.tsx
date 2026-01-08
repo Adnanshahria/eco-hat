@@ -4,7 +4,7 @@ import { Package, ArrowLeft, Truck, Check, Clock, X, ChevronDown, ChevronUp, Ale
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 
 interface OrderItem {
     id: number;

@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
 import { useCart } from "@/lib/cart-context";
 import { supabase } from "@/lib/supabase";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 import { NavBar } from "@/components/navbar";
 
 interface Product {

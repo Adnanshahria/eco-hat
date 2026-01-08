@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
 import {
     Menu, X, Search, ShoppingBag, Leaf, User as UserIcon, LogOut, LayoutDashboard
 } from "lucide-react";

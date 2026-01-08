@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
-import { Link, useLocation } from "wouter";
+import { AppLink as Link } from "@/components/app-link";
+import { useLocation } from "wouter";
 
 const divisions = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"];
 
