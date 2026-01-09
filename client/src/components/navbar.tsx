@@ -81,10 +81,18 @@ export function NavBar({ onSearch }: NavBarProps) {
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <Link href={userRole?.toLowerCase() === 'admin' ? "/admin" : userRole?.toLowerCase() === 'seller' ? "/seller" : "/profile"}>
+                                    <Link href={
+                                        userRole?.toLowerCase() === 'admin' ? "/admin"
+                                            : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "/seller"
+                                                : "/profile"
+                                    }>
                                         <DropdownMenuItem className="cursor-pointer">
                                             <LayoutDashboard className="mr-2 h-4 w-4" />
-                                            <span>{userRole?.toLowerCase() === 'admin' ? "Admin Panel" : userRole?.toLowerCase() === 'seller' ? "Seller Dashboard" : "Profile"}</span>
+                                            <span>{
+                                                userRole?.toLowerCase() === 'admin' ? "Admin Panel"
+                                                    : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "Seller Dashboard"
+                                                        : "Profile"
+                                            }</span>
                                         </DropdownMenuItem>
                                     </Link>
                                     <DropdownMenuSeparator />
@@ -135,10 +143,16 @@ export function NavBar({ onSearch }: NavBarProps) {
                         )}
                         {user ? (
                             <>
-                                <Link href={userRole?.toLowerCase() === 'admin' ? "/admin" : userRole?.toLowerCase() === 'seller' ? "/seller" : "/profile"}>
+                                <Link href={
+                                    userRole?.toLowerCase() === 'admin' ? "/admin"
+                                        : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "/seller"
+                                            : "/profile"
+                                }>
                                     <Button className="w-full bg-primary mb-2">
                                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        {userRole?.toLowerCase() === 'admin' ? "Admin Panel" : userRole?.toLowerCase() === 'seller' ? "Dashboard" : "Profile"}
+                                        {userRole?.toLowerCase() === 'admin' ? "Admin Panel"
+                                            : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "Dashboard"
+                                                : "Profile"}
                                     </Button>
                                 </Link>
                                 <Button variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => signOut()}>
