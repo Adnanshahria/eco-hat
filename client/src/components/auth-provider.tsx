@@ -19,11 +19,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [userRole, setUserRole] = useState<string | null>(localStorage.getItem("userRole"));
 
     const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0) => {
-        // Skip if already have a cached role
+        // Set cached role immediately for faster UI, but still fetch fresh
         const cachedRole = localStorage.getItem("userRole");
         if (cachedRole && retryCount === 0) {
             setUserRole(cachedRole);
-            return;
+            // Don't return - continue to fetch fresh role in background
         }
 
         try {
