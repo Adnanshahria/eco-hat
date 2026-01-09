@@ -113,13 +113,18 @@ export default function FixDatabase() {
 
     const fixOrderSchema = async () => {
         setLoading(true);
-        log("Checking 'cod_charge', 'delivery_charge', 'subtotal' columns...");
+        log("Checking ALL order columns (order_number, charges, etc)...");
         try {
             const { error: alterError } = await supabaseAdmin.rpc('exec_sql', {
                 sql: `
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number TEXT;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_history JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT;
 NOTIFY pgrst, 'reload schema';
 `
             }).single();
@@ -127,12 +132,15 @@ NOTIFY pgrst, 'reload schema';
             if (alterError) {
                 log(`RPC Error: ${alterError.message}`);
                 log("Run this in SQL Editor:");
-                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;");
-                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_number TEXT;");
                 log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_history JSONB DEFAULT '[]'::jsonb;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address JSONB DEFAULT '{}'::jsonb;");
                 await supabaseAdmin.rpc('exec_sql', { sql: `NOTIFY pgrst, 'reload schema';` });
             } else {
-                log("Schema update command sent successfully.");
+                log("Schema update command sent successfully for all columns.");
             }
         } catch (err: any) {
             log(`Fix error: ${err.message}`);
