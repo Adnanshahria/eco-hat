@@ -66,6 +66,14 @@ export default function Profile() {
     const fetchedRef = useRef(false);
 
     useEffect(() => {
+        // Safety timeout to ensure loading always completes
+        const safetyTimeout = setTimeout(() => {
+            if (loading) {
+                console.warn("Profile loading safety timeout triggered");
+                setLoading(false);
+            }
+        }, 10000);
+
         if (authLoading) return; // Wait for auth to settle
 
         if (user?.email && !fetchedRef.current) {
@@ -74,6 +82,8 @@ export default function Profile() {
         } else if (!user?.email) {
             setLoading(false);
         }
+
+        return () => clearTimeout(safetyTimeout);
     }, [user, authLoading]);
 
     const fetchProfile = async () => {
@@ -86,7 +96,13 @@ export default function Profile() {
 
         console.log("Starting Supabase query...");
         try {
-            const { data, error } = await supabase.from("users").select("*").eq("email", user.email).single();
+            // Add timeout protection to prevent infinite loading
+            const timeoutPromise = new Promise<{ data: null; error: { message: string; code: string } }>((resolve) =>
+                setTimeout(() => resolve({ data: null, error: { message: "Query timeout", code: "TIMEOUT" } }), 8000)
+            );
+
+            const queryPromise = supabase.from("users").select("*").eq("email", user.email).single();
+            const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
             console.log("Profile fetch result:", { data, error });
 
             if (data) {
@@ -124,6 +140,9 @@ export default function Profile() {
                 } else {
                     console.error("Failed to create user record:", createErr);
                 }
+            } else if (error && error.code === "TIMEOUT") {
+                console.error("Profile fetch timed out - possible network or database issue");
+                // Still allow profile creation form to show by not setting profile
             } else if (error) {
                 console.error("Error fetching profile:", error);
             }
