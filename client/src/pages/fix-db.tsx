@@ -113,24 +113,29 @@ export default function FixDatabase() {
 
     const fixOrderSchema = async () => {
         setLoading(true);
-        log("Checking 'cod_charge' column on orders table...");
+        log("Checking 'cod_charge', 'delivery_charge', 'subtotal' columns...");
         try {
-            // Attempt to add column via exec_sql if available
             const { error: alterError } = await supabaseAdmin.rpc('exec_sql', {
-                sql: `ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER; NOTIFY pgrst, 'reload schema';`
+                sql: `
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal INTEGER DEFAULT 0;
+NOTIFY pgrst, 'reload schema';
+`
             }).single();
 
             if (alterError) {
                 log(`RPC Error: ${alterError.message}`);
-                log("If RPC is missing, please run this in Supabase SQL Editor:");
-                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER;");
-                // Try simple reload just in case it exists but cache is stale
+                log("Run this in SQL Editor:");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_charge INTEGER DEFAULT 0;");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal INTEGER DEFAULT 0;");
                 await supabaseAdmin.rpc('exec_sql', { sql: `NOTIFY pgrst, 'reload schema';` });
             } else {
-                log("Column 'cod_charge' check/add command sent.");
+                log("Schema update command sent successfully.");
             }
         } catch (err: any) {
-            log(`Order schema fix error: ${err.message}`);
+            log(`Fix error: ${err.message}`);
         } finally {
             setLoading(false);
         }
