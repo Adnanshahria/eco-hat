@@ -111,6 +111,31 @@ export default function FixDatabase() {
         }
     };
 
+    const fixOrderSchema = async () => {
+        setLoading(true);
+        log("Checking 'cod_charge' column on orders table...");
+        try {
+            // Attempt to add column via exec_sql if available
+            const { error: alterError } = await supabaseAdmin.rpc('exec_sql', {
+                sql: `ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER; NOTIFY pgrst, 'reload schema';`
+            }).single();
+
+            if (alterError) {
+                log(`RPC Error: ${alterError.message}`);
+                log("If RPC is missing, please run this in Supabase SQL Editor:");
+                log("ALTER TABLE orders ADD COLUMN IF NOT EXISTS cod_charge INTEGER;");
+                // Try simple reload just in case it exists but cache is stale
+                await supabaseAdmin.rpc('exec_sql', { sql: `NOTIFY pgrst, 'reload schema';` });
+            } else {
+                log("Column 'cod_charge' check/add command sent.");
+            }
+        } catch (err: any) {
+            log(`Order schema fix error: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const updateUserRole = async (role: string) => {
         if (!targetEmail) return log("Please enter an email address.");
         setLoading(true);
@@ -148,6 +173,9 @@ export default function FixDatabase() {
                         </Button>
                         <Button onClick={fixProductSchema} disabled={loading} variant="outline" className="w-full justify-start">
                             <CheckCircle className="mr-2 h-4 w-4" /> Fix Product Schema & Visibility
+                        </Button>
+                        <Button onClick={fixOrderSchema} disabled={loading} variant="outline" className="w-full justify-start">
+                            <CheckCircle className="mr-2 h-4 w-4" /> Fix Order Schema (cod_charge)
                         </Button>
                     </div>
 
