@@ -26,10 +26,10 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
                     setTimeout(() => reject(new Error("Admin check timeout")), 5000)
                 );
 
-                // Check user role in database
+                // Check user role in database - using * since specific column select might be behaving differently
                 const dbPromise = supabase
                     .from("users")
-                    .select("role, is_super_admin")
+                    .select("*")
                     .eq("email", user.email)
                     .single();
 
