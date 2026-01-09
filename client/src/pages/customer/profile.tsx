@@ -37,7 +37,7 @@ interface UserProfile {
 const divisions = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"];
 
 export default function Profile() {
-    const { user } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -66,13 +66,15 @@ export default function Profile() {
     const fetchedRef = useRef(false);
 
     useEffect(() => {
+        if (authLoading) return; // Wait for auth to settle
+
         if (user?.email && !fetchedRef.current) {
             fetchedRef.current = true;
             fetchProfile();
         } else if (!user?.email) {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, authLoading]);
 
     const fetchProfile = async () => {
         console.log("Fetching profile for user:", user?.email);
