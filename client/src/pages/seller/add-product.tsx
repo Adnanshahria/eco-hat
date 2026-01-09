@@ -59,15 +59,33 @@ export default function AddProduct() {
     }, []);
 
     const checkVerification = async () => {
-        if (!user?.email) return;
-        const { data } = await supabase.from("users").select("verification_status").eq("email", user.email).single();
-        if (data) setVerificationStatus(data.verification_status || "none");
-        setCheckingStatus(false);
+        if (!user?.email) {
+            // No user yet - set a timeout to prevent infinite loading
+            setTimeout(() => setCheckingStatus(false), 3000);
+            return;
+        }
+        try {
+            const { data, error } = await supabase.from("users").select("verification_status").eq("email", user.email).single();
+            if (data) setVerificationStatus(data.verification_status || "none");
+        } catch (err) {
+            console.error("Error checking verification:", err);
+        } finally {
+            setCheckingStatus(false);
+        }
     };
 
     const fetchCategories = async () => {
-        const { data } = await supabase.from("categories").select("*");
-        if (data) setCategories(data);
+        console.log("Fetching categories...");
+        const { data, error } = await supabase.from("categories").select("*");
+        console.log("Categories result:", { data, error });
+        if (error) {
+            console.error("Error fetching categories:", error);
+        }
+        if (data && data.length > 0) {
+            setCategories(data);
+        } else {
+            console.warn("No categories found in database");
+        }
     };
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

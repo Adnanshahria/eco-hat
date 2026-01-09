@@ -18,30 +18,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(null);
 
-    const fetchUserRole = async (email: string, isMounted: () => boolean) => {
+    const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0) => {
         try {
             const { data, error } = await supabase.from("users").select("role").eq("email", email).single();
             if (!isMounted()) return;
 
             if (data) {
+                console.log("User role fetched:", data.role);
                 setUserRole(data.role);
             } else if (error && error.code === "PGRST116") {
-                // User doesn't exist in table - create one (self-healing for Auth-only users)
-                const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-                const userId = `USR-${dateStr}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
-
-                const { data: created } = await supabase.from("users").insert({
-                    user_id: userId,
-                    username: email.split("@")[0],
-                    full_name: email.split("@")[0],
-                    email: email,
-                    role: "buyer",
-                    saved_addresses: []
-                }).select("role").single();
-
-                if (!isMounted()) return;
-                if (created) setUserRole(created.role);
-                else setUserRole("buyer"); // Default fallback
+                // User doesn't exist in table yet - this might be a race condition during registration
+                // Retry a few times before falling back, as auth.tsx might still be creating the user
+                if (retryCount < 3) {
+                    console.log(`User not found, retrying in 500ms (attempt ${retryCount + 1}/3)...`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    if (isMounted()) {
+                        return fetchUserRole(email, isMounted, retryCount + 1);
+                    }
+                } else {
+                    // After retries, default to buyer (user might need to complete registration)
+                    console.log("User not found after retries, defaulting to buyer");
+                    setUserRole("buyer");
+                }
+            } else if (error) {
+                console.error("Error fetching user role:", error);
+                setUserRole("buyer");
             }
         } catch (err) {
             console.error("Error fetching user role:", err);
