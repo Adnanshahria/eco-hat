@@ -134,7 +134,7 @@ export default function SellerDashboard() {
             .from("order_items")
             .select(`
                 id, quantity, price_at_purchase, seller_earning, item_status, denial_reason,
-                order:orders (id, status, phone, total_amount, shipping_address, created_at, buyer:users(id, username, email)),
+                order:orders (id, status, phone, total_amount, shipping_address, created_at, buyer:users!buyer_id(id, username, email)),
                 product:products (name)
             `)
             .eq("seller_id", profileData.id)
