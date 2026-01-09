@@ -120,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Always clear local state and storage regardless of Supabase response
+        localStorage.removeItem("userRole"); // Clear cached role
         for (const key of Object.keys(localStorage)) {
             if (key.startsWith('sb-') && key.includes('-auth')) {
                 localStorage.removeItem(key);
