@@ -54,13 +54,13 @@ export default function Auth() {
                     // Use full name as default username
                     // Sellers start as uv-seller until verified
                     const actualRole = role === 'seller' ? 'uv-seller' : role;
-                    await supabase.from("users").insert({
+                    await supabase.from("users").upsert({
                         user_id: userId,
                         username: fullName, // Name as default username
                         full_name: fullName,
                         email,
                         role: actualRole
-                    });
+                    }, { onConflict: 'email' });
                 }
                 // Redirect to seller dashboard for uv-seller too
                 const redirectRole = role === 'seller' ? 'uv-seller' : role;
