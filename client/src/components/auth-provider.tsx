@@ -93,13 +93,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null);
             setSession(null);
             setUserRole(null);
-            // Force reload to clear all state
-            window.location.href = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
         } catch (error) {
             console.error("Sign out error:", error);
-            // Still redirect even if there's an error
-            window.location.href = import.meta.env.BASE_URL.replace(/\/$/, '') || '/';
         }
+        // Always reload to homepage after sign out
+        window.location.href = window.location.origin + (import.meta.env.BASE_URL || '/');
     };
 
     return (
