@@ -183,9 +183,18 @@ export default function CustomerOrders() {
                                             </div>
 
                                             {/* Tracking */}
+                                            <div className="mb-4">
+                                                <Link href={`/track-order/${order.id}`}>
+                                                    <Button variant="outline" className="w-full gap-2">
+                                                        <Truck className="h-4 w-4" />
+                                                        Track Order Status
+                                                    </Button>
+                                                </Link>
+                                            </div>
+
                                             {order.tracking_history && order.tracking_history.length > 0 && (
                                                 <div>
-                                                    <p className="text-sm font-medium mb-2">Tracking</p>
+                                                    <p className="text-sm font-medium mb-2">Tracking History</p>
                                                     <div className="space-y-2">
                                                         {order.tracking_history.map((track, i) => (
                                                             <div key={i} className="flex items-start gap-2 text-sm">

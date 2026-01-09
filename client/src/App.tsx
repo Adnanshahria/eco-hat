@@ -13,6 +13,7 @@ import Home from "@/pages/home";
 import Auth from "@/pages/auth";
 import PrivacyPolicy from "@/pages/privacy-policy";
 import TermsOfService from "@/pages/terms-of-service";
+import OrderTracking from "@/pages/order-tracking";
 
 // Customer Pages
 import CustomerShop from "@/pages/customer/shop";
@@ -43,6 +44,8 @@ function Router() {
       <Route path="/auth" component={Auth} />
       <Route path="/privacy-policy" component={PrivacyPolicy} />
       <Route path="/terms-of-service" component={TermsOfService} />
+      <Route path="/track-order" component={OrderTracking} />
+      <Route path="/track-order/:id" component={OrderTracking} />
 
       {/* Customer Routes */}
       <Route path="/shop" component={CustomerShop} />
