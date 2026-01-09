@@ -136,7 +136,14 @@ export function NotificationCenter() {
                                                 <div className="flex items-start justify-between">
                                                     <p className={`text-sm ${!n.read ? "font-semibold" : "font-medium"}`}>{n.title}</p>
                                                     <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-2">
-                                                        {new Date(n.created_at).toLocaleDateString()}
+                                                        {new Date(n.created_at).toLocaleString("en-BD", {
+                                                            timeZone: "Asia/Dhaka",
+                                                            month: "short",
+                                                            day: "numeric",
+                                                            hour: "numeric",
+                                                            minute: "2-digit",
+                                                            hour12: true
+                                                        })}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-muted-foreground leading-snug">{n.message}</p>

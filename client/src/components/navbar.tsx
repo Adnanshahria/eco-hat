@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AppLink as Link } from "@/components/app-link";
 import {
-    Menu, X, Search, ShoppingCart, Leaf, User as UserIcon, LogOut, LayoutDashboard
+    Menu, X, Search, ShoppingCart, Leaf, User as UserIcon, LogOut, LayoutDashboard, Package
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,6 @@ export function NavBar({ onSearch }: NavBarProps) {
                     <nav className="hidden lg:flex items-center gap-6">
                         <Link href="/shop" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Shop</Link>
                         <Link href="/track-order" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Track Order</Link>
-                        <a href={`${import.meta.env.BASE_URL}#categories`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Categories</a>
                         <a href={`${import.meta.env.BASE_URL}#contact`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Contact Us</a>
                     </nav>
 
@@ -100,6 +99,12 @@ export function NavBar({ onSearch }: NavBarProps) {
                                             }</span>
                                         </DropdownMenuItem>
                                     </Link>
+                                    <Link href="/orders">
+                                        <DropdownMenuItem className="cursor-pointer">
+                                            <Package className="mr-2 h-4 w-4" />
+                                            <span>My Orders</span>
+                                        </DropdownMenuItem>
+                                    </Link>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem onSelect={() => { console.log("Logout clicked"); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
                                         <LogOut className="mr-2 h-4 w-4" />
@@ -139,7 +144,6 @@ export function NavBar({ onSearch }: NavBarProps) {
                         />
                         <Link href="/shop" className="py-3 font-medium touch-manipulation touch-target flex items-center">Shop</Link>
                         <Link href="/track-order" className="py-3 font-medium touch-manipulation touch-target flex items-center">Track Order</Link>
-                        <a href={`${import.meta.env.BASE_URL}#categories`} className="py-3 font-medium touch-manipulation touch-target flex items-center">Categories</a>
                         <a href={`${import.meta.env.BASE_URL}#contact`} className="py-3 font-medium touch-manipulation touch-target flex items-center">Contact Us</a>
                         {user && (
                             <div className="py-2 flex items-center justify-between">

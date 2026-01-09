@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { NavBar } from "@/components/navbar";
 
 const steps = [
     { key: "pending", label: "Order Placed", icon: Clock },
     { key: "confirmed", label: "Confirmed", icon: CheckCircle },
     { key: "processing", label: "Processing", icon: Package },
-    { key: "shipped", label: "Shipped", icon: Truck }, // Fixed typo Trucj -> Truck
-    { key: "delivered", label: "Delivered", icon: MapPin }, // Changed MapPin for delivered
+    { key: "shipped", label: "Shipped", icon: Truck },
+    { key: "at_station", label: "At Station", icon: MapPin },
+    { key: "reached_destination", label: "Near You", icon: CheckCircle },
+    { key: "delivered", label: "Delivered", icon: CheckCircle },
 ];
 
 export default function OrderTracking() {
@@ -92,6 +95,9 @@ export default function OrderTracking() {
 
     return (
         <div className="min-h-screen bg-background pb-20">
+            {/* Navbar */}
+            <NavBar />
+
             {/* Hero Section */}
             <div className="bg-primary/5 py-16 px-4">
                 <div className="max-w-2xl mx-auto text-center space-y-6">
@@ -123,7 +129,7 @@ export default function OrderTracking() {
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
                             <div className="flex items-center gap-3 mb-1">
-                                <h2 className="text-2xl font-bold">Order #{order.id}</h2>
+                                <h2 className="text-2xl font-bold">Order #{order.order_number || order.id}</h2>
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wider
                                     ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
                                         order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
@@ -132,7 +138,7 @@ export default function OrderTracking() {
                                 </span>
                             </div>
                             <p className="text-muted-foreground">
-                                Placed on {new Date(order.created_at).toLocaleDateString("en-US", { dateStyle: "long", timeStyle: "short" })}
+                                Placed on {new Date(order.created_at).toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}
                             </p>
                         </div>
                         <div className="text-right">

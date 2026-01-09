@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { AppLink as Link } from "@/components/app-link";
 import { useLocation } from "wouter";
+import { createNotification } from "@/components/notifications";
 
 const divisions = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"];
 
@@ -145,6 +146,34 @@ export default function Checkout() {
             }));
 
             await supabase.from("order_items").insert(orderItems);
+
+            // Notify each unique seller about their new order
+            const uniqueSellerIds = Array.from(new Set(orderItems.map(item => item.seller_id).filter(Boolean))) as number[];
+            for (const sellerId of uniqueSellerIds) {
+                await createNotification(
+                    sellerId,
+                    "🛒 New Order Received!",
+                    `Order #${orderNumber} needs your approval. Check your seller dashboard.`,
+                    "info"
+                );
+            }
+
+            // Notify all admins for oversight
+            const { data: admins } = await supabase
+                .from("users")
+                .select("id")
+                .eq("role", "admin");
+            if (admins) {
+                for (const admin of admins) {
+                    await createNotification(
+                        admin.id,
+                        "📦 New Order Placed",
+                        `Order #${orderNumber} (৳${grandTotal}) placed and awaiting seller approval.`,
+                        "info"
+                    );
+                }
+            }
+
             await clearCart();
             setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err: any) {

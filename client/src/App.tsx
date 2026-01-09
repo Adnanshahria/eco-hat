@@ -27,6 +27,7 @@ import Profile from "@/pages/customer/profile";
 // Seller Pages
 import SellerDashboard from "@/pages/seller/dashboard";
 import AddProduct from "@/pages/seller/add-product";
+import EditProduct from "@/pages/seller/edit-product";
 
 
 // Admin Pages
@@ -54,16 +55,47 @@ function Router() {
       <Route path="/shop/order-confirmation/:id" component={OrderConfirmation} />
       <Route path="/shop/product/:id" component={ProductDetail} />
       <Route path="/shop/orders" component={CustomerOrders} />
+      <Route path="/orders" component={CustomerOrders} />
       <Route path="/shops/:id" component={ShopProfile} />
       <Route path="/profile" component={Profile} />
 
       {/* Seller Routes */}
       <Route path="/seller" component={SellerDashboard} />
+      <Route path="/seller/orders" component={SellerDashboard} />
+      <Route path="/seller/products" component={SellerDashboard} />
+      <Route path="/seller/earnings" component={SellerDashboard} />
+      <Route path="/seller/account" component={SellerDashboard} />
       <Route path="/seller/add-product" component={AddProduct} />
+      <Route path="/seller/edit-product/:id" component={EditProduct} />
 
 
       {/* Admin Routes */}
       <Route path="/admin">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/sellers">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/products">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/users">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/orders">
+        <AdminRoute>
+          <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/admins">
         <AdminRoute>
           <AdminDashboard />
         </AdminRoute>

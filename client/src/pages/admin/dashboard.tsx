@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu } from "lucide-react";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
@@ -43,7 +44,17 @@ interface Stats {
     pendingProductVerifications: number;
 }
 
-// ... existing statusConfig ...
+const statusConfig: Record<string, { label: string; color: string; next?: string }> = {
+    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700", next: "confirmed" },
+    confirmed: { label: "Confirmed", color: "bg-blue-100 text-blue-700", next: "processing" },
+    processing: { label: "Processing", color: "bg-purple-100 text-purple-700", next: "shipped" },
+    shipped: { label: "Shipped", color: "bg-indigo-100 text-indigo-700", next: "at_station" },
+    at_station: { label: "At Station", color: "bg-cyan-100 text-cyan-700", next: "reached_destination" },
+    reached_destination: { label: "Reached Destination", color: "bg-teal-100 text-teal-700" },
+    delivered: { label: "Delivered", color: "bg-green-100 text-green-700" },
+    cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700" },
+    denied: { label: "Denied", color: "bg-red-100 text-red-700" },
+};
 
 export default function AdminDashboard() {
     const { user, signOut } = useAuth();
@@ -55,11 +66,36 @@ export default function AdminDashboard() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalSellers: 0, totalAdmins: 0, pendingVerifications: 0, pendingProductVerifications: 0 });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"users" | "admins" | "products" | "orders" | "seller-verifications" | "product-verifications" | "tracking">("seller-verifications");
+
+    // Check URL for specific routes
+    const [, overviewMatch] = useRoute("/admin");
+    const [, sellersMatch] = useRoute("/admin/sellers");
+    const [, productsMatch] = useRoute("/admin/products");
+    const [, usersMatch] = useRoute("/admin/users");
+    const [, ordersMatch] = useRoute("/admin/orders");
+    const [, adminsMatch] = useRoute("/admin/admins");
+
+    type TabType = "overview" | "users" | "admins" | "products" | "orders" | "seller-verifications" | "product-verifications" | "tracking";
+
+    const getActiveTab = (): TabType => {
+        if (sellersMatch) return "seller-verifications";
+        if (productsMatch) return "product-verifications";
+        if (usersMatch) return "users";
+        if (ordersMatch) return "tracking";
+        if (adminsMatch) return "admins";
+        return "overview";
+    };
+
+    const [activeTab, setActiveTab] = useState<TabType>(getActiveTab());
+
+    useEffect(() => {
+        setActiveTab(getActiveTab());
+    }, [overviewMatch, sellersMatch, productsMatch, usersMatch, ordersMatch, adminsMatch]);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
 
     const isSuperAdmin = currentUser?.is_super_admin || false;
 
@@ -149,9 +185,41 @@ export default function AdminDashboard() {
             await createNotification(
                 buyerId,
                 "Order Update",
-                `Your order #${orderId} is now ${statusConfig[newStatus]?.label || newStatus}.`,
+                `Your order #${orderId} is now ${newStatus}.`,
                 "info"
             );
+        }
+    };
+
+    const updateItemStatus = async (itemId: number, newStatus: string, orderId?: number) => {
+        await supabase.from("order_items").update({ item_status: newStatus }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, item_status: newStatus } : i));
+
+        // Update tracking history and notify buyer
+        if (orderId) {
+            const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id").eq("id", orderId).single();
+            if (orderData) {
+                const history = orderData.tracking_history || [];
+                const statusMessages: Record<string, string> = {
+                    at_station: "📍 Your package has arrived at the delivery station",
+                    reached_destination: "🎉 Your package has reached your area and is ready for delivery!",
+                    delivered: "✅ Order has been delivered successfully!",
+                    cancelled: "❌ Order has been cancelled by admin",
+                };
+                const note = statusMessages[newStatus] || `Order status updated to ${newStatus}`;
+                history.push({ status: newStatus, timestamp: new Date().toISOString(), note });
+                await supabase.from("orders").update({ tracking_history: history, status: newStatus }).eq("id", orderId);
+
+                // Notify buyer
+                if (orderData.buyer_id) {
+                    await createNotification(
+                        orderData.buyer_id,
+                        `📦 Delivery Update`,
+                        note,
+                        "info"
+                    );
+                }
+            }
         }
     };
 
@@ -268,24 +336,21 @@ export default function AdminDashboard() {
                 </div>
                 <nav className="space-y-1 flex-1">
                     {[
-                        { id: "seller-verifications", icon: Users, label: "Seller Verifications", count: stats.pendingVerifications },
-                        { id: "product-verifications", icon: Shield, label: "Product Verifications", count: stats.pendingProductVerifications },
-                        { id: "tracking", icon: Truck, label: "Order Tracking" },
-                        { id: "users", icon: Users, label: "Users" },
-                        ...(isSuperAdmin ? [{ id: "admins", icon: Crown, label: "Manage Admins" }] : []),
-                        { id: "products", icon: Package, label: "All Products" },
-                        { id: "orders", icon: ShoppingCart, label: "Orders" },
+                        { id: "overview", route: "/admin", icon: LayoutDashboard, label: "Overview" },
+                        { id: "seller-verifications", route: "/admin/sellers", icon: Users, label: "Seller Verifications", count: stats.pendingVerifications },
+                        { id: "product-verifications", route: "/admin/products", icon: Shield, label: "Product Verifications", count: stats.pendingProductVerifications },
+                        { id: "users", route: "/admin/users", icon: Users, label: "Users" },
+                        ...(isSuperAdmin ? [{ id: "admins", route: "/admin/admins", icon: Crown, label: "Manage Admins" }] : []),
+                        { id: "tracking", route: "/admin/orders", icon: ShoppingCart, label: "Orders" },
                     ].map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setActiveTab(t.id as any)}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition ${activeTab === t.id ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted text-muted-foreground"}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <t.icon className="h-4 w-4" /> {t.label}
+                        <Link key={t.id} href={t.route}>
+                            <div className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition cursor-pointer ${activeTab === t.id || (t.id === "tracking" && activeTab === "orders") ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted text-muted-foreground"}`}>
+                                <div className="flex items-center gap-3">
+                                    <t.icon className="h-4 w-4" /> {t.label}
+                                </div>
+                                {t.count ? <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{t.count}</span> : null}
                             </div>
-                            {t.count ? <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{t.count}</span> : null}
-                        </button>
+                        </Link>
                     ))}
                 </nav>
                 <Button variant="ghost" size="sm" onClick={signOut} className="justify-start gap-2 mt-4 text-red-500 hover:text-red-600 hover:bg-red-50"><LogOut className="h-4 w-4" /> Logout</Button>
@@ -295,27 +360,43 @@ export default function AdminDashboard() {
             <main className="flex-1 p-4 lg:p-8 overflow-auto pb-20 lg:pb-8">
                 <div className="max-w-6xl mx-auto">
                     <header className="mb-6 lg:mb-8">
-                        <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
-                        <p className="text-muted-foreground">Manage your marketplace, approve sellers, and track orders.</p>
+                        <h1 className="text-2xl font-bold mb-2">
+                            {activeTab === "overview" && "Dashboard Overview"}
+                            {activeTab === "seller-verifications" && "Seller Verifications"}
+                            {activeTab === "product-verifications" && "Product Verifications"}
+                            {activeTab === "users" && "User Management"}
+                            {activeTab === "admins" && "Manage Admins"}
+                            {activeTab === "tracking" && "Order Tracking"}
+                        </h1>
+                        <p className="text-muted-foreground">
+                            {activeTab === "overview" && "Manage your marketplace, approve sellers, and track orders."}
+                            {activeTab === "seller-verifications" && "Review and approve seller registration requests."}
+                            {activeTab === "product-verifications" && "Review and approve new product listings."}
+                            {activeTab === "users" && "View and manage all registered users."}
+                            {activeTab === "admins" && "Add or remove admin privileges."}
+                            {activeTab === "tracking" && "Track and manage all orders."}
+                        </p>
                     </header>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                        {[
-                            { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
-                            { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
-                            { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
-                            { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
-                            { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
-                        ].map((s, i) => (
-                            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
-                                <div className="flex items-center gap-4">
-                                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
-                                    <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                    {/* Stats - Only on Overview Tab */}
+                    {activeTab === "overview" && (
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                            {[
+                                { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
+                                { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
+                                { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
+                                { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
+                                { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
+                            ].map((s, i) => (
+                                <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
+                                        <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Product Verifications Tab */}
                     {activeTab === "product-verifications" && (
@@ -364,94 +445,131 @@ export default function AdminDashboard() {
                     )}
 
                     {/* Order Tracking Tab */}
-                    {activeTab === "tracking" && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold flex items-center gap-2"><Truck className="h-5 w-5" /> Order Tracking</h2>
-                                <span className="text-sm text-muted-foreground">{orderItems.length} items</span>
-                            </div>
+                    {activeTab === "tracking" && (() => {
+                        const filteredItems = orderStatusFilter === "all"
+                            ? orderItems
+                            : orderItems.filter(i => (i.item_status || i.order?.status || "pending") === orderStatusFilter);
 
-                            <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 text-left">
-                                            <tr>
-                                                <th className="p-3 font-medium text-muted-foreground">Order #</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Product</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Buyer</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Delivery Location</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Seller</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Date</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {orderItems.length === 0 ? (
-                                                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders found</td></tr>
-                                            ) : orderItems.map((item: any) => {
-                                                const statusColors: Record<string, string> = {
-                                                    pending: "bg-yellow-100 text-yellow-800",
-                                                    confirmed: "bg-blue-100 text-blue-800",
-                                                    processing: "bg-purple-100 text-purple-800",
-                                                    shipped: "bg-indigo-100 text-indigo-800",
-                                                    delivered: "bg-green-100 text-green-800",
-                                                    denied: "bg-red-100 text-red-800",
-                                                };
-                                                const status = item.item_status || item.order?.status || "pending";
-                                                const address = item.order?.shipping_address;
+                        return (
+                            <div className="space-y-6">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <h2 className="text-xl font-bold flex items-center gap-2"><Truck className="h-5 w-5" /> Order Tracking</h2>
+                                    <div className="flex items-center gap-3">
+                                        <select
+                                            className="text-sm border rounded-lg px-3 py-2 bg-background"
+                                            value={orderStatusFilter}
+                                            onChange={(e) => setOrderStatusFilter(e.target.value)}
+                                        >
+                                            <option value="all">All Status ({orderItems.length})</option>
+                                            <option value="pending">🕐 Pending</option>
+                                            <option value="confirmed">✓ Confirmed</option>
+                                            <option value="processing">⚙️ Processing</option>
+                                            <option value="shipped">🚚 Shipped</option>
+                                            <option value="at_station">📍 At Station</option>
+                                            <option value="reached_destination">🎯 Reached Destination</option>
+                                            <option value="delivered">✅ Delivered</option>
+                                            <option value="cancelled">❌ Cancelled</option>
+                                        </select>
+                                        <span className="text-sm text-muted-foreground">{filteredItems.length} items</span>
+                                    </div>
+                                </div>
 
-                                                return (
-                                                    <tr key={item.id} className="border-t hover:bg-muted/20 transition">
-                                                        <td className="p-3">
-                                                            <div className="font-mono font-bold text-emerald-700">#{item.order?.order_number || item.order?.id}</div>
-                                                            <div className="text-xs text-muted-foreground">Item #{item.id}</div>
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="flex items-center gap-2">
-                                                                {item.product?.images?.[0] && (
-                                                                    <img src={item.product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
-                                                                )}
-                                                                <div>
-                                                                    <div className="font-medium">{item.product?.name || "Unknown"}</div>
-                                                                    <div className="text-xs text-muted-foreground">×{item.quantity}</div>
+                                <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50 text-left">
+                                                <tr>
+                                                    <th className="p-3 font-medium text-muted-foreground">Order #</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Product</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Buyer</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Delivery Location</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Seller</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Date</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Status</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {orderItems.length === 0 ? (
+                                                    <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders found</td></tr>
+                                                ) : filteredItems.map((item: any) => {
+                                                    const statusColors: Record<string, string> = {
+                                                        pending: "bg-yellow-100 text-yellow-800",
+                                                        confirmed: "bg-blue-100 text-blue-800",
+                                                        processing: "bg-purple-100 text-purple-800",
+                                                        shipped: "bg-indigo-100 text-indigo-800",
+                                                        delivered: "bg-green-100 text-green-800",
+                                                        denied: "bg-red-100 text-red-800",
+                                                    };
+                                                    const status = item.item_status || item.order?.status || "pending";
+                                                    const address = item.order?.shipping_address;
+
+                                                    return (
+                                                        <tr key={item.id} className="border-t hover:bg-muted/20 transition">
+                                                            <td className="p-3">
+                                                                <div className="font-mono font-bold text-emerald-700">#{item.order?.order_number || item.order?.id}</div>
+                                                                <div className="text-xs text-muted-foreground">Item #{item.id}</div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.product?.images?.[0] && (
+                                                                        <img src={item.product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
+                                                                    )}
+                                                                    <div>
+                                                                        <div className="font-medium">{item.product?.name || "Unknown"}</div>
+                                                                        <div className="text-xs text-muted-foreground">×{item.quantity}</div>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.order?.buyer?.email}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
-                                                        </td>
-                                                        <td className="p-3 max-w-[200px]">
-                                                            {address ? (
-                                                                <div className="text-xs">
-                                                                    <div className="font-medium">{address.fullName}</div>
-                                                                    <div>{address.address}</div>
-                                                                    <div>{address.district}, {address.division}</div>
-                                                                </div>
-                                                            ) : <span className="text-muted-foreground">—</span>}
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="font-medium">{item.seller?.username || "—"}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.seller?.shop_location}</div>
-                                                        </td>
-                                                        <td className="p-3 text-xs">
-                                                            {item.order?.created_at ? new Date(item.order.created_at).toLocaleDateString() : "—"}
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
-                                                                {status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
+                                                                <div className="text-xs text-muted-foreground">{item.order?.buyer?.email}</div>
+                                                                <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
+                                                            </td>
+                                                            <td className="p-3 max-w-[200px]">
+                                                                {address ? (
+                                                                    <div className="text-xs">
+                                                                        <div className="font-medium">{address.fullName}</div>
+                                                                        <div>{address.address}</div>
+                                                                        <div>{address.district}, {address.division}</div>
+                                                                    </div>
+                                                                ) : <span className="text-muted-foreground">—</span>}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="font-medium">{item.seller?.username || "—"}</div>
+                                                                <div className="text-xs text-muted-foreground">{item.seller?.shop_location}</div>
+                                                            </td>
+                                                            <td className="p-3 text-xs">
+                                                                {item.order?.created_at ? new Date(item.order.created_at).toLocaleDateString() : "—"}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
+                                                                    {status}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <select
+                                                                    className="text-xs border rounded px-2 py-1 bg-background"
+                                                                    value={status}
+                                                                    onChange={(e) => updateItemStatus(item.id, e.target.value, item.order?.id)}
+                                                                >
+                                                                    <option value={status}>{statusConfig[status]?.label || status}</option>
+                                                                    {status === "shipped" && <option value="at_station">📍 At Station</option>}
+                                                                    {(status === "shipped" || status === "at_station") && <option value="reached_destination">🎯 Reached Destination</option>}
+                                                                    {(status === "reached_destination" || status === "at_station" || status === "shipped") && <option value="delivered">✅ Mark Delivered</option>}
+                                                                    {status !== "cancelled" && status !== "delivered" && <option value="cancelled">❌ Cancel Order</option>}
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Seller Verifications Tab */}
                     {activeTab === "seller-verifications" && (
@@ -598,8 +716,7 @@ export default function AdminDashboard() {
                                                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Unverified</span>}
                                             </td>
                                             <td className="p-4 text-right">
-                                                {u.role === "buyer" && <Button variant="ghost" size="sm" onClick={() => updateRole(u.id, "seller")}>Make Seller</Button>}
-                                                {u.role === "seller" && <Button variant="ghost" size="sm" onClick={() => updateRole(u.id, "buyer")}>Make Buyer</Button>}
+                                                {/* Role management removed */}
                                             </td>
                                         </tr>
                                     ))}
@@ -608,8 +725,7 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Products Tab */}
-                    {activeTab === "products" && <div className="bg-card rounded-xl border p-12 text-center text-muted-foreground">Product management interface coming soon.</div>}
+                    {/* Products Tab - Not needed anymore since products are shown via verifications */}
 
                     {/* Orders Tab */}
                     {activeTab === "orders" && (
@@ -638,22 +754,21 @@ export default function AdminDashboard() {
 
             {/* Mobile Bottom Navigation */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
-                <div className="flex items-center justify-around px-2 py-2">
+                <div className="flex items-center justify-around px-1 py-2">
                     {[
-                        { id: "seller-verifications", icon: Store, label: "Sellers", count: stats.pendingSellerVerifications },
-                        { id: "product-verifications", icon: Shield, label: "Products", count: stats.pendingProductVerifications },
-                        { id: "users", icon: Users, label: "Users" },
-                        { id: "orders", icon: ShoppingCart, label: "Orders" },
+                        { id: "overview", route: "/admin", icon: LayoutDashboard, label: "Overview" },
+                        { id: "seller-verifications", route: "/admin/sellers", icon: Store, label: "Sellers", count: stats.pendingVerifications },
+                        { id: "product-verifications", route: "/admin/products", icon: Shield, label: "Products", count: stats.pendingProductVerifications },
+                        { id: "users", route: "/admin/users", icon: Users, label: "Users" },
+                        { id: "tracking", route: "/admin/orders", icon: ShoppingCart, label: "Orders" },
                     ].map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setActiveTab(t.id as any)}
-                            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}
-                        >
-                            <t.icon className="h-5 w-5" />
-                            <span className="text-xs font-medium">{t.label}</span>
-                            {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">{t.count}</span> : null}
-                        </button>
+                        <Link key={t.id} href={t.route}>
+                            <div className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}>
+                                <t.icon className="h-5 w-5" />
+                                <span className="text-[10px] font-medium">{t.label}</span>
+                                {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1 rounded-full">{t.count}</span> : null}
+                            </div>
+                        </Link>
                     ))}
                     <button
                         onClick={signOut}

@@ -114,7 +114,7 @@ export default function ProductDetail() {
             .from("reviews")
             .select(`
                 *,
-                user:users(username, avatar_url)
+                user:users!buyer_id(username, avatar_url)
             `)
             .eq("product_id", id)
             .order("created_at", { ascending: false });
