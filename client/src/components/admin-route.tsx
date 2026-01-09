@@ -11,34 +11,43 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         const checkAdminStatus = async () => {
+            console.log("AdminRoute: checkAdminStatus running", { authLoading, userEmail: user?.email });
             if (authLoading) return;
 
             if (!user?.email) {
-                // Not logged in
+                console.log("AdminRoute: No user, redirecting to auth");
                 setLocation("/auth");
                 return;
             }
 
             try {
+                // Timeout promise to prevent hanging indefinitely
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Admin check timeout")), 5000)
+                );
+
                 // Check user role in database
-                const { data, error } = await supabase
+                const dbPromise = supabase
                     .from("users")
                     .select("role, is_super_admin")
                     .eq("email", user.email)
                     .single();
 
+                console.log("AdminRoute: Querying DB for admin status...");
+                const { data, error } = await Promise.race([dbPromise, timeoutPromise]) as any;
+                console.log("AdminRoute: DB result:", { data, error });
+
                 if (error || !data) {
-                    console.error("Admin check failed:", error);
+                    console.error("Admin check failed or no data:", error);
                     setIsAuthorized(false);
                     return;
                 }
 
                 // Check authorization
-                if (data.role === "admin" || data.is_super_admin) {
-                    setIsAuthorized(true);
-                } else {
-                    setIsAuthorized(false);
-                }
+                const isAdmin = data.role === "admin" || data.is_super_admin === true;
+                console.log("AdminRoute: Is admin?", isAdmin);
+                setIsAuthorized(isAdmin);
+
             } catch (err) {
                 console.error("Admin route error:", err);
                 setIsAuthorized(false);
