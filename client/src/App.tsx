@@ -11,6 +11,8 @@ import { AdminRoute } from "@/components/admin-route";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Auth from "@/pages/auth";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import TermsOfService from "@/pages/terms-of-service";
 
 // Customer Pages
 import CustomerShop from "@/pages/customer/shop";
@@ -35,6 +37,8 @@ function Router() {
       {/* Public Routes */}
       <Route path="/" component={Home} />
       <Route path="/auth" component={Auth} />
+      <Route path="/privacy-policy" component={PrivacyPolicy} />
+      <Route path="/terms-of-service" component={TermsOfService} />
 
       {/* Customer Routes */}
       <Route path="/shop" component={CustomerShop} />
@@ -74,7 +78,7 @@ function App() {
         <CartProvider>
           <TooltipProvider>
             <Toaster />
-            <WouterRouter base={import.meta.env.BASE_URL}>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
               <Router />
             </WouterRouter>
           </TooltipProvider>

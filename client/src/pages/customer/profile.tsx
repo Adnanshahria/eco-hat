@@ -69,6 +69,7 @@ export default function Profile() {
         console.log("Fetching profile for user:", user);
         if (!user?.email) {
             console.log("No user email found");
+            setLoading(false);
             return;
         }
         const { data, error } = await supabase.from("users").select("*").eq("email", user.email).single();
@@ -82,6 +83,33 @@ export default function Profile() {
                 phone: data.phone || "",
                 bio: data.bio || "",
             });
+        } else if (error && error.code === "PGRST116") {
+            // User doesn't exist in table - create one (self-healing for Auth-only users)
+            console.log("User not in table, creating record...");
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+            const userId = `USR-${dateStr}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+
+            const newUser = {
+                user_id: userId,
+                username: user.email.split("@")[0],
+                full_name: user.email.split("@")[0],
+                email: user.email,
+                role: "buyer",
+                saved_addresses: []
+            };
+
+            const { data: created, error: createErr } = await supabase.from("users").insert(newUser).select().single();
+            if (created) {
+                setProfile(created);
+                setForm({
+                    username: created.username || "",
+                    full_name: created.full_name || "",
+                    phone: created.phone || "",
+                    bio: created.bio || "",
+                });
+            } else {
+                console.error("Failed to create user record:", createErr);
+            }
         }
         setLoading(false);
     };

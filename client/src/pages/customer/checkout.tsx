@@ -195,7 +195,7 @@ export default function Checkout() {
                     ))}
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-8">
+                <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
                     <div className="lg:col-span-2">
                         {/* Step 1: Shipping */}
                         {step === 1 && (
@@ -343,8 +343,8 @@ export default function Checkout() {
                     </div>
 
                     {/* Order Summary */}
-                    <div className="lg:col-span-1">
-                        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-6 sticky top-24">
+                    <div className="lg:col-span-1 order-first lg:order-last">
+                        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 lg:p-6 lg:sticky lg:top-24">
                             <h3 className="font-semibold text-emerald-800 mb-4 flex items-center gap-2">
                                 <Leaf className="h-4 w-4 text-emerald-500" /> Order Summary
                             </h3>

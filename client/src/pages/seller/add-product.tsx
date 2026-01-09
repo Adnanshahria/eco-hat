@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
     ArrowLeft,
@@ -12,7 +12,9 @@ import {
     ShoppingCart,
     Store,
     Shield,
-    AlertTriangle
+    AlertTriangle,
+    Leaf,
+    Image as ImageIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +38,9 @@ export default function AddProduct() {
     const [loading, setLoading] = useState(false);
     const [checkingStatus, setCheckingStatus] = useState(true);
     const [verificationStatus, setVerificationStatus] = useState<string>("none");
+    const [images, setImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState({
         name: "",
         description: "",
@@ -45,6 +50,7 @@ export default function AddProduct() {
         categoryId: "",
         tags: [] as string[],
         tagInput: "",
+        ecoRating: 70, // Default 70% eco-friendliness
     });
 
     useEffect(() => {
@@ -64,13 +70,60 @@ export default function AddProduct() {
         if (data) setCategories(data);
     };
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length + images.length > 5) {
+            alert("Maximum 5 images allowed");
+            return;
+        }
+        const newImages = [...images, ...files];
+        setImages(newImages);
+
+        // Create previews
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                setImagePreviews(prev => [...prev, e.target?.result as string]);
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const removeImage = (index: number) => {
+        setImages(images.filter((_, i) => i !== index));
+        setImagePreviews(imagePreviews.filter((_, i) => i !== index));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (images.length === 0) {
+            alert("Please add at least one product image");
+            return;
+        }
+
         setLoading(true);
 
         try {
             const { data: profile } = await supabase.from("users").select("id").eq("email", user?.email).single();
             if (!profile) throw new Error("Seller profile not found");
+
+            // Upload images to Supabase Storage
+            const imageUrls: string[] = [];
+            for (const image of images) {
+                const fileName = `${Date.now()}-${image.name}`;
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from("product-images")
+                    .upload(`products/${profile.id}/${fileName}`, image);
+
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage
+                    .from("product-images")
+                    .getPublicUrl(`products/${profile.id}/${fileName}`);
+
+                imageUrls.push(urlData.publicUrl);
+            }
 
             const { error } = await supabase.from("products").insert({
                 name: formData.name,
@@ -82,6 +135,10 @@ export default function AddProduct() {
                 seller_id: profile.id,
                 tags: formData.tags,
                 is_eco_friendly: true,
+                eco_rating: formData.ecoRating,
+                image_url: imageUrls[0], // Main image
+                images: imageUrls, // All images
+                status: "pending", // Sent for admin verification
             });
 
             if (error) throw error;
@@ -244,6 +301,75 @@ export default function AddProduct() {
                             />
                         </div>
 
+                        {/* Image Upload */}
+                        <div className="space-y-2">
+                            <Label>Product Images * (Max 5)</Label>
+                            <div className="border-2 border-dashed border-border rounded-xl p-4">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    multiple
+                                    onChange={handleImageSelect}
+                                />
+                                {imagePreviews.length > 0 ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                                        {imagePreviews.map((preview, index) => (
+                                            <div key={index} className="relative aspect-square rounded-lg overflow-hidden group">
+                                                <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => removeImage(index)}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                                                >
+                                                    <X className="h-3 w-3" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className="w-full gap-2"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={images.length >= 5}
+                                >
+                                    <ImageIcon className="h-4 w-4" />
+                                    {images.length > 0 ? `Add More (${images.length}/5)` : "Upload Images"}
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Eco-Friendliness Rating */}
+                        <div className="space-y-3">
+                            <Label className="flex items-center gap-2">
+                                <Leaf className="h-4 w-4 text-primary" />
+                                Estimated Eco-Friendliness *
+                            </Label>
+                            <div className="flex items-center gap-4">
+                                <input
+                                    type="range"
+                                    min="10"
+                                    max="100"
+                                    step="5"
+                                    value={formData.ecoRating}
+                                    onChange={(e) => setFormData({ ...formData, ecoRating: parseInt(e.target.value) })}
+                                    className="flex-1 h-2 bg-primary/20 rounded-lg appearance-none cursor-pointer accent-primary"
+                                />
+                                <span className={`min-w-[60px] px-3 py-1 rounded-full text-sm font-medium text-center ${formData.ecoRating >= 80 ? "bg-green-100 text-green-700" :
+                                    formData.ecoRating >= 50 ? "bg-yellow-100 text-yellow-700" :
+                                        "bg-orange-100 text-orange-700"
+                                    }`}>
+                                    {formData.ecoRating}%
+                                </span>
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                Rate how eco-friendly this product is based on materials, packaging, and sustainability.
+                            </p>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="price">Price (৳) *</Label>
@@ -354,17 +480,20 @@ export default function AddProduct() {
                             <Button
                                 type="submit"
                                 className="w-full bg-primary hover:bg-primary/90"
-                                disabled={loading}
+                                disabled={loading || images.length === 0}
                             >
                                 {loading ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <>
-                                        <Package className="h-4 w-4 mr-2" />
-                                        Add Product
+                                        <Shield className="h-4 w-4 mr-2" />
+                                        Submit for Verification
                                     </>
                                 )}
                             </Button>
+                            <p className="text-xs text-muted-foreground text-center mt-2">
+                                Your product will be reviewed by admin before going live
+                            </p>
                         </div>
                     </motion.form>
                 </div>

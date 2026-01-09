@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/components/notifications";
+import { AppLink as Link } from "@/components/app-link";
 
 interface User {
     id: number;
@@ -63,6 +64,7 @@ export default function AdminDashboard() {
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const isSuperAdmin = currentUser?.is_super_admin || false;
 
@@ -220,11 +222,18 @@ export default function AdminDashboard() {
     const nonAdmins = users.filter(u => u.role !== "admin");
 
     return (
-        <div className="min-h-screen bg-background flex">
-            {/* Sidebar */}
+        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+            {/* Mobile Header - Logo only */}
+            <header className="lg:hidden sticky top-0 z-50 bg-card border-b border-border p-3 flex items-center justify-center gap-2">
+                <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-8 cursor-pointer" /></Link>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Admin</span>
+                {isSuperAdmin && <span className="text-[9px] bg-yellow-100 text-yellow-700 px-1 rounded">Super</span>}
+            </header>
+
+            {/* Desktop Sidebar */}
             <aside className="w-64 bg-card border-r border-border p-4 flex-shrink-0 hidden lg:flex flex-col">
                 <div className="flex items-center gap-2 mb-8">
-                    <img src="/logo-en.png" alt="EcoHaat" className="h-10" />
+                    <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-10 cursor-pointer" /></Link>
                     <div className="flex flex-col">
                         <span className="font-bold text-lg leading-tight">Admin</span>
                         {isSuperAdmin && <span className="text-[10px] bg-yellow-100 text-yellow-700 px-1.5 rounded-full w-fit">Super Admin</span>}
@@ -254,9 +263,9 @@ export default function AdminDashboard() {
             </aside>
 
             {/* Main */}
-            <main className="flex-1 p-8 overflow-auto">
+            <main className="flex-1 p-4 lg:p-8 overflow-auto pb-20 lg:pb-8">
                 <div className="max-w-6xl mx-auto">
-                    <header className="mb-8">
+                    <header className="mb-6 lg:mb-8">
                         <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
                         <p className="text-muted-foreground">Manage your marketplace, approve sellers, and track orders.</p>
                     </header>
@@ -473,6 +482,28 @@ export default function AdminDashboard() {
                     )}
                 </div>
             </main>
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
+                <div className="flex items-center justify-around px-2 py-2">
+                    {[
+                        { id: "verifications", icon: Shield, label: "Verify", count: stats.pendingVerifications },
+                        { id: "users", icon: Users, label: "Users" },
+                        { id: "orders", icon: ShoppingCart, label: "Orders" },
+                        { id: "products", icon: Package, label: "Products" },
+                    ].map(t => (
+                        <button
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id as any)}
+                            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}
+                        >
+                            <t.icon className="h-5 w-5" />
+                            <span className="text-xs font-medium">{t.label}</span>
+                            {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">{t.count}</span> : null}
+                        </button>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 }

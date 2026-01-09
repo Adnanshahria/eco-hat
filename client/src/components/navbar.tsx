@@ -24,7 +24,7 @@ interface NavBarProps {
 export function NavBar({ onSearch }: NavBarProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const { user, signOut } = useAuth(); // Get signOut
+    const { user, userRole, signOut } = useAuth();
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value;
@@ -81,10 +81,10 @@ export function NavBar({ onSearch }: NavBarProps) {
                                 <DropdownMenuContent align="end" className="w-56">
                                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
+                                    <Link href={userRole === 'admin' ? "/admin" : userRole === 'seller' ? "/seller" : "/profile"}>
                                         <DropdownMenuItem className="cursor-pointer">
                                             <LayoutDashboard className="mr-2 h-4 w-4" />
-                                            <span>{user.role === 'admin' ? "Admin Panel" : user.role === 'seller' ? "Seller Dashboard" : "Profile"}</span>
+                                            <span>{userRole === 'admin' ? "Admin Panel" : userRole === 'seller' ? "Seller Dashboard" : "Profile"}</span>
                                         </DropdownMenuItem>
                                     </Link>
                                     <DropdownMenuSeparator />
@@ -135,10 +135,10 @@ export function NavBar({ onSearch }: NavBarProps) {
                         )}
                         {user ? (
                             <>
-                                <Link href={user.role === 'admin' ? "/admin" : user.role === 'seller' ? "/seller" : "/profile"}>
+                                <Link href={userRole === 'admin' ? "/admin" : userRole === 'seller' ? "/seller" : "/profile"}>
                                     <Button className="w-full bg-primary mb-2">
                                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        {user.role === 'admin' ? "Admin Panel" : user.role === 'seller' ? "Dashboard" : "Profile"}
+                                        {userRole === 'admin' ? "Admin Panel" : userRole === 'seller' ? "Dashboard" : "Profile"}
                                     </Button>
                                 </Link>
                                 <Button variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => signOut()}>

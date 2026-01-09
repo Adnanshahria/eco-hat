@@ -49,7 +49,7 @@ export default function Cart() {
                         </Link>
                     </div>
                 ) : (
-                    <div className="grid lg:grid-cols-3 gap-8">
+                    <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
                         {/* Cart Items */}
                         <div className="lg:col-span-2 space-y-4">
                             {items.map((item, index) => (
@@ -115,7 +115,7 @@ export default function Cart() {
 
                         {/* Order Summary */}
                         <div className="lg:col-span-1">
-                            <div className="bg-card rounded-xl border border-card-border p-6 sticky top-24">
+                            <div className="bg-card rounded-xl border border-card-border p-4 lg:p-6 lg:sticky lg:top-24">
                                 <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
                                 <div className="space-y-3 text-sm">

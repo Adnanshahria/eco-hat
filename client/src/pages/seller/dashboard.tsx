@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { Package, Plus, TrendingUp, DollarSign, ShoppingCart, LogOut, Trash2, Clock, Check, X, Truck, AlertCircle, Wallet, AlertTriangle, Send } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Package, Plus, TrendingUp, DollarSign, ShoppingCart, LogOut, Trash2, Clock, Check, X, Truck, AlertCircle, Wallet, AlertTriangle, Send, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/components/auth-provider";
@@ -62,6 +62,7 @@ export default function SellerDashboard() {
     const [stats, setStats] = useState<Stats>({ totalProducts: 0, pendingOrders: 0, confirmedOrders: 0, totalEarnings: 0, pendingEarnings: 0 });
     const [loading, setLoading] = useState(true);
     const [denyModal, setDenyModal] = useState<{ itemId: number; reason: string } | null>(null);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     // Termination State
     const [isTerminated, setIsTerminated] = useState(false);
@@ -233,11 +234,17 @@ export default function SellerDashboard() {
     }
 
     return (
-        <div className="min-h-screen bg-background flex">
-            {/* Sidebar */}
+        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+            {/* Mobile Header - Logo only */}
+            <header className="lg:hidden sticky top-0 z-50 bg-card border-b border-border p-3 flex items-center justify-center gap-2">
+                <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-8 cursor-pointer" /></Link>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Seller</span>
+            </header>
+
+            {/* Desktop Sidebar */}
             <aside className="w-56 bg-card border-r border-border p-4 flex-shrink-0 hidden lg:flex flex-col">
                 <div className="flex items-center gap-2 mb-6">
-                    <img src="/logo-en.png" alt="EcoHaat" className="h-10" />
+                    <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-10 cursor-pointer" /></Link>
                     <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Seller</span>
                 </div>
                 <nav className="space-y-1 flex-1">
@@ -262,26 +269,31 @@ export default function SellerDashboard() {
             </aside>
 
             {/* Main */}
-            <main className="flex-1 p-6 overflow-auto">
+            <main className="flex-1 p-4 lg:p-6 overflow-auto pb-20 lg:pb-6">
                 <div className="max-w-5xl mx-auto">
-                    <h1 className="text-xl font-bold mb-1">Seller Dashboard</h1>
-                    <p className="text-sm text-muted-foreground mb-6">Manage your products and orders</p>
+                    {/* Dashboard Tab - Stats & Overview */}
+                    {activeTab === "dashboard" && (
+                        <>
+                            <h1 className="text-xl font-bold mb-1">Seller Dashboard</h1>
+                            <p className="text-sm text-muted-foreground mb-6">Manage your products and orders</p>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-                        {[
-                            { label: "Products", value: stats.totalProducts, icon: Package, color: "bg-primary/10 text-primary" },
-                            { label: "Pending", value: stats.pendingOrders, icon: Clock, color: "bg-yellow-100 text-yellow-600" },
-                            { label: "Active", value: stats.confirmedOrders, icon: Check, color: "bg-blue-100 text-blue-600" },
-                            { label: "Earned", value: `৳${stats.totalEarnings}`, icon: DollarSign, color: "bg-green-100 text-green-600" },
-                            { label: "Pending $", value: `৳${stats.pendingEarnings}`, icon: Wallet, color: "bg-purple-100 text-purple-600" },
-                        ].map(s => (
-                            <div key={s.label} className="bg-card rounded-xl border p-3 flex items-center gap-3">
-                                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${s.color}`}><s.icon className="h-4 w-4" /></div>
-                                <div><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-lg font-bold">{s.value}</p></div>
+                            {/* Stats */}
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                                {[
+                                    { label: "Products", value: stats.totalProducts, icon: Package, color: "bg-primary/10 text-primary" },
+                                    { label: "Pending", value: stats.pendingOrders, icon: Clock, color: "bg-yellow-100 text-yellow-600" },
+                                    { label: "Active", value: stats.confirmedOrders, icon: Check, color: "bg-blue-100 text-blue-600" },
+                                    { label: "Earned", value: `৳${stats.totalEarnings}`, icon: DollarSign, color: "bg-green-100 text-green-600" },
+                                    { label: "Pending $", value: `৳${stats.pendingEarnings}`, icon: Wallet, color: "bg-purple-100 text-purple-600" },
+                                ].map(s => (
+                                    <div key={s.label} className="bg-card rounded-xl border p-3 flex items-center gap-3">
+                                        <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${s.color}`}><s.icon className="h-4 w-4" /></div>
+                                        <div><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-lg font-bold">{s.value}</p></div>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                        </>
+                    )}
 
                     {/* Orders Tab */}
                     {activeTab === "orders" && (
@@ -445,6 +457,28 @@ export default function SellerDashboard() {
                     </div>
                 </div>
             )}
+
+            {/* Mobile Bottom Navigation */}
+            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
+                <div className="flex items-center justify-around px-2 py-2">
+                    {[
+                        { id: "dashboard", icon: TrendingUp, label: "Home" },
+                        { id: "orders", icon: ShoppingCart, label: "Orders", badge: stats.pendingOrders },
+                        { id: "products", icon: Package, label: "Products" },
+                        { id: "earnings", icon: Wallet, label: "Earnings" },
+                    ].map(t => (
+                        <button
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id as any)}
+                            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}
+                        >
+                            <t.icon className="h-5 w-5" />
+                            <span className="text-xs font-medium">{t.label}</span>
+                            {t.badge ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">{t.badge}</span> : null}
+                        </button>
+                    ))}
+                </div>
+            </nav>
         </div>
     );
 }

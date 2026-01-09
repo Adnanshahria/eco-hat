@@ -36,7 +36,7 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  base: "/eco-hat/",
+  base: process.env.NODE_ENV === "production" ? "/eco-hat/" : "/",
   envDir: import.meta.dirname,
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),

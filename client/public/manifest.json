@@ -5,15 +5,15 @@
     "theme_color": "#10b981",
     "background_color": "#ffffff",
     "display": "standalone",
-    "start_url": "/eco-hat/",
+    "start_url": "./",
     "icons": [
         {
-            "src": "/eco-hat/logo-en.png",
+            "src": "./logo-en.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "/eco-hat/logo-en.png",
+            "src": "./logo-en.png",
             "sizes": "512x512",
             "type": "image/png"
         }

@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AppLink as Link } from "@/components/app-link";
 import { NavBar } from "@/components/navbar";
+import { supabase } from "@/lib/supabase";
 
 const categories = [
   { id: 1, name: "Household", icon: TreeDeciduous, count: 45, color: "bg-emerald-100 text-emerald-700" },
@@ -49,18 +50,47 @@ const testimonials = [
 export default function Home() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [email, setEmail] = useState("");
+  const [subscribing, setSubscribing] = useState(false);
+  const [subscribeMsg, setSubscribeMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  const handleSubscribe = async () => {
+    if (!email.trim() || !email.includes("@")) {
+      setSubscribeMsg({ ok: false, text: "Please enter a valid email" });
+      return;
+    }
+    setSubscribing(true);
+    setSubscribeMsg(null);
+    try {
+      const { error } = await supabase.from("subscribers").insert({ email: email.trim().toLowerCase() });
+      if (error) {
+        if (error.code === "23505") {
+          setSubscribeMsg({ ok: false, text: "You're already subscribed!" });
+        } else {
+          setSubscribeMsg({ ok: false, text: "Something went wrong. Try again." });
+        }
+      } else {
+        setSubscribeMsg({ ok: true, text: "Thanks for subscribing! 🌱" });
+        setEmail("");
+      }
+    } catch {
+      setSubscribeMsg({ ok: false, text: "Something went wrong. Try again." });
+    }
+    setSubscribing(false);
+  };
 
   return (
     <div className="min-h-screen bg-background grain-texture scroll-smooth-mobile safe-area-insets">
       <NavBar />
 
       <section className="relative overflow-hidden bg-gradient-natural leaf-pattern">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-24">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
+              className="text-center lg:text-left"
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
                 <Leaf className="h-4 w-4" />
@@ -71,11 +101,11 @@ export default function Home() {
                 <br />
                 <span className="text-foreground">for Everyday Life</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-lg">
+              <p className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0">
                 Bangladesh's first curated eco-marketplace. Discover plastic-free,
                 natural products from local artisans and ethical brands.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 items-center lg:items-start">
                 <Link href="/shop">
                   <Button size="lg" className="bg-primary hover:bg-primary/90 font-display font-semibold text-base px-8 w-full sm:w-auto" data-testid="button-shop-now">
                     Shop Now
@@ -88,18 +118,18 @@ export default function Home() {
                   </Button>
                 </a>
               </div>
-              <div className="flex items-center gap-8 mt-10 pt-8 border-t border-border/50">
+              <div className="grid grid-cols-3 gap-4 sm:gap-8 mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border/50">
                 <div>
-                  <p className="text-2xl font-bold font-display text-primary">500+</p>
-                  <p className="text-sm text-muted-foreground">Eco Products</p>
+                  <p className="text-xl sm:text-2xl font-bold font-display text-primary">500+</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Eco Products</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold font-display text-primary">50+</p>
-                  <p className="text-sm text-muted-foreground">Local Brands</p>
+                  <p className="text-xl sm:text-2xl font-bold font-display text-primary">50+</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Local Brands</p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold font-display text-primary">10K+</p>
-                  <p className="text-sm text-muted-foreground">Happy Customers</p>
+                  <p className="text-xl sm:text-2xl font-bold font-display text-primary">10K+</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Happy Customers</p>
                 </div>
               </div>
             </motion.div>
@@ -157,7 +187,7 @@ export default function Home() {
               Explore our curated collection of sustainable products for every aspect of your life
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
             {categories.map((category, index) => (
               <motion.div
                 key={category.id}
@@ -193,7 +223,7 @@ export default function Home() {
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4">
             {featuredProducts.map((product, index) => (
               <motion.div
                 key={product.id}
@@ -253,7 +283,7 @@ export default function Home() {
               The visionary minds behind EcoHaat, dedicated to bringing sustainable living to Bangladesh.
             </p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {/* Founder */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-card p-6 rounded-2xl border border-card-border text-center hover:shadow-lg transition-shadow">
               <div className="h-24 w-24 bg-primary/10 rounded-full mx-auto mb-4 flex items-center justify-center">
@@ -362,11 +392,24 @@ export default function Home() {
                 placeholder="Enter your email"
                 className="flex-1 bg-muted/50"
                 data-testid="input-newsletter"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSubscribe()}
               />
-              <Button className="bg-primary hover:bg-primary/90 font-display font-medium" data-testid="button-subscribe">
-                Subscribe
+              <Button
+                className="bg-primary hover:bg-primary/90 font-display font-medium"
+                data-testid="button-subscribe"
+                onClick={handleSubscribe}
+                disabled={subscribing}
+              >
+                {subscribing ? "Subscribing..." : "Subscribe"}
               </Button>
             </div>
+            {subscribeMsg && (
+              <p className={`text-sm mt-3 ${subscribeMsg.ok ? "text-green-600" : "text-red-600"}`}>
+                {subscribeMsg.text}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground mt-4">
               We respect your privacy. Unsubscribe anytime.
             </p>
@@ -392,8 +435,6 @@ export default function Home() {
                 links: [
                   { label: "All Products", href: "/shop" },
                   { label: "Categories", href: `${import.meta.env.BASE_URL}#categories` },
-                  { label: "New Arrivals", href: "/shop" },
-                  { label: "Best Sellers", href: "/shop" }
                 ]
               },
               {
@@ -401,17 +442,6 @@ export default function Home() {
                 links: [
                   { label: "Contact Us", href: `${import.meta.env.BASE_URL}#contact` },
                   { label: "Team", href: `${import.meta.env.BASE_URL}#contact` },
-                  { label: "Blog", href: "#" },
-                  { label: "Careers", href: "#" }
-                ]
-              },
-              {
-                title: "Support",
-                links: [
-                  { label: "Help Center", href: "#" },
-                  { label: "FAQs", href: "#" },
-                  { label: "Shipping", href: "#" },
-                  { label: "Returns", href: "#" }
                 ]
               },
             ].map((section) => (
@@ -440,8 +470,8 @@ export default function Home() {
               © 2026 EcoHaat. All rights reserved. টেকসই পণ্য সর্বত্র...
             </p>
             <div className="flex items-center gap-4">
-              <a href="#" className="text-background/60 hover:text-background text-sm">Privacy Policy</a>
-              <a href="#" className="text-background/60 hover:text-background text-sm">Terms of Service</a>
+              <Link href="/privacy-policy" className="text-background/60 hover:text-background text-sm">Privacy Policy</Link>
+              <Link href="/terms-of-service" className="text-background/60 hover:text-background text-sm">Terms of Service</Link>
             </div>
           </div>
         </div>

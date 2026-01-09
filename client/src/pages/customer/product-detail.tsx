@@ -241,7 +241,7 @@ export default function ProductDetail() {
                         </div>
 
                         {/* Features */}
-                        <div className="grid grid-cols-3 gap-4 pt-6 border-t">
+                        <div className="grid grid-cols-3 gap-2 sm:gap-4 pt-6 border-t">
                             <div className="text-center">
                                 <Truck className="h-6 w-6 mx-auto mb-2 text-primary" />
                                 <p className="text-sm font-medium">Free Delivery</p>
