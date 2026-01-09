@@ -90,14 +90,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const signOut = async () => {
         try {
             await supabase.auth.signOut();
+            // Clear any local storage auth tokens manually as a fallback
+            localStorage.removeItem(`sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1].split('.')[0]}-auth-token`);
+            // Also clear generic Supabase keys if any
+            for (const key of Object.keys(localStorage)) {
+                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                    localStorage.removeItem(key);
+                }
+            }
+
             setUser(null);
             setSession(null);
             setUserRole(null);
         } catch (error) {
             console.error("Sign out error:", error);
         }
-        // Always reload to homepage after sign out
-        window.location.href = window.location.origin + (import.meta.env.BASE_URL || '/');
+
+        // Robust redirect to homepage
+        const origin = window.location.origin;
+        const base = import.meta.env.BASE_URL || '/';
+        const target = origin + (base.endsWith('/') ? base : base + '/');
+
+        console.log("Signing out and redirecting to:", target);
+        window.location.href = target;
     };
 
     return (
