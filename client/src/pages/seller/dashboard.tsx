@@ -82,6 +82,7 @@ export default function SellerDashboard() {
         username: "", // Shop Name
         full_name: "",
         phone: "",
+        bio: "",
         shop_location: "",
         shop_type: "Permanent Shop",
     });
@@ -110,6 +111,7 @@ export default function SellerDashboard() {
             username: profileData.username || "",
             full_name: profileData.full_name || "",
             phone: profileData.phone || "",
+            bio: profileData.bio || "",
             shop_location: profileData.shop_location || "",
             shop_type: profileData.shop_type || "Permanent Shop",
         });
@@ -183,6 +185,7 @@ export default function SellerDashboard() {
             username: accountForm.username,
             full_name: accountForm.full_name,
             phone: accountForm.phone,
+            bio: accountForm.bio,
             shop_location: accountForm.shop_location,
             shop_type: accountForm.shop_type,
         }).eq("id", sellerId);
