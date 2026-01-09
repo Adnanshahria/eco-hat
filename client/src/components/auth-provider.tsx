@@ -40,34 +40,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUserRole(data.role);
                 localStorage.setItem("userRole", data.role);
             } else if (error && error.code === "PGRST116") {
-                // User doesn't exist - retry or create
-                if (retryCount < 2) {
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                // User doesn't exist in DB yet - this is normal during signup
+                // Do NOT create user here. Let auth.tsx or profile.tsx handle it.
+                // Just set a temporary client-side role.
+                console.log("User not found in DB, waiting for signup flow to create...");
+                if (retryCount < 3) {
+                    // Retry a few times in case auth.tsx is still creating the record
+                    await new Promise(resolve => setTimeout(resolve, 500));
                     if (isMounted()) {
                         return fetchUserRole(email, isMounted, retryCount + 1);
                     }
                 } else {
-                    // Create user record
-                    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-                    const userId = `USR-${dateStr}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
-
-                    const { data: created, error: createErr } = await supabase.from("users").insert({
-                        user_id: userId,
-                        username: email.split("@")[0],
-                        full_name: email.split("@")[0],
-                        email: email,
-                        role: "buyer",
-                        saved_addresses: []
-                    }).select("role").single();
-
-                    if (!isMounted()) return;
-                    if (created) {
-                        setUserRole(created.role);
-                        localStorage.setItem("userRole", created.role);
-                    } else {
-                        setUserRole("buyer");
-                        localStorage.setItem("userRole", "buyer");
-                    }
+                    // After retries, just set null - the app will redirect to profile or handle gracefully
+                    setUserRole(null);
                 }
             } else if (error) {
                 // Use cached role or default to buyer
