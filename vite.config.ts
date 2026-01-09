@@ -36,10 +36,10 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  base: process.env.NODE_ENV === "production" ? "/eco-hat/" : "/",
+  base: process.env.NODE_ENV === "production" && !process.env.VERCEL ? "/eco-hat/" : "/",
   envDir: import.meta.dirname,
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
     chunkSizeWarningLimit: 1600,
   },
