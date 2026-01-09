@@ -655,6 +655,13 @@ export default function AdminDashboard() {
                             {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">{t.count}</span> : null}
                         </button>
                     ))}
+                    <button
+                        onClick={signOut}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target text-red-500"
+                    >
+                        <LogOut className="h-5 w-5" />
+                        <span className="text-xs font-medium">Logout</span>
+                    </button>
                 </div>
             </nav>
         </div>
