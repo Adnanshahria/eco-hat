@@ -40,27 +40,22 @@ interface Stats {
     totalSellers: number;
     totalAdmins: number;
     pendingVerifications: number;
+    pendingProductVerifications: number;
 }
 
-const statusConfig: Record<string, { label: string; color: string; next?: string }> = {
-    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700", next: "confirmed" },
-    confirmed: { label: "Confirmed", color: "bg-blue-100 text-blue-700", next: "processing" },
-    processing: { label: "Processing", color: "bg-purple-100 text-purple-700", next: "shipped" },
-    shipped: { label: "Shipped", color: "bg-indigo-100 text-indigo-700", next: "out_for_delivery" },
-    out_for_delivery: { label: "Out for Delivery", color: "bg-cyan-100 text-cyan-700", next: "delivered" },
-    delivered: { label: "Delivered", color: "bg-green-100 text-green-700" },
-    cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700" },
-};
+// ... existing statusConfig ...
 
 export default function AdminDashboard() {
     const { user, signOut } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [pendingSellers, setPendingSellers] = useState<User[]>([]);
+    const [pendingProducts, setPendingProducts] = useState<any[]>([]); // New state for products
     const [orders, setOrders] = useState<Order[]>([]);
+    const [orderItems, setOrderItems] = useState<any[]>([]); // For tracking tab
     const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalSellers: 0, totalAdmins: 0, pendingVerifications: 0 });
+    const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalSellers: 0, totalAdmins: 0, pendingVerifications: 0, pendingProductVerifications: 0 });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"users" | "admins" | "products" | "orders" | "verifications">("users");
+    const [activeTab, setActiveTab] = useState<"users" | "admins" | "products" | "orders" | "seller-verifications" | "product-verifications" | "tracking">("seller-verifications");
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -83,12 +78,17 @@ export default function AdminDashboard() {
             const pending = usersData.filter((u: User) => u.verification_status === "pending");
             setPendingSellers(pending);
 
+            // Fetch Pending Products
+            const { data: pendingProd } = await supabase.from("products").select("*").eq("status", "pending");
+            if (pendingProd) setPendingProducts(pendingProd);
+
             setStats(s => ({
                 ...s,
                 totalUsers: usersData.length,
                 totalSellers: usersData.filter((u: User) => u.role === "seller").length,
                 totalAdmins: usersData.filter((u: User) => u.role === "admin").length,
                 pendingVerifications: pending.length,
+                pendingProductVerifications: pendingProd?.length || 0,
             }));
         }
 
@@ -98,10 +98,37 @@ export default function AdminDashboard() {
             .order("created_at", { ascending: false });
         if (ordersData) setOrders(ordersData as unknown as Order[]);
 
+        // Fetch order items with all related data for tracking
+        const { data: itemsData } = await supabase
+            .from("order_items")
+            .select(`
+                id, quantity, price_at_purchase, item_status,
+                order:orders (id, order_number, status, phone, shipping_address, created_at, buyer:users!orders_buyer_id_fkey(id, username, email)),
+                product:products (id, name, images),
+                seller:users!order_items_seller_id_fkey (id, username, email, shop_location)
+            `)
+            .order("id", { ascending: false });
+        if (itemsData) setOrderItems(itemsData);
+
         const { count: pCount } = await supabase.from("products").select("*", { count: "exact", head: true });
         const { count: oCount } = await supabase.from("orders").select("*", { count: "exact", head: true });
         setStats(s => ({ ...s, totalProducts: pCount || 0, totalOrders: oCount || 0 }));
         setLoading(false);
+    };
+
+    const verifyProduct = async (productId: number, approved: boolean, reason?: string) => {
+        const updateData: any = { status: approved ? 'approved' : 'rejected' };
+        if (!approved && reason) updateData.rejection_reason = reason;
+
+        await supabase.from("products").update(updateData).eq("id", productId);
+
+        // Notify Seller (Todo: Fetch product to get seller_id)
+        // For now just update local state
+        setPendingProducts(prev => prev.filter(p => p.id !== productId));
+        setStats(s => ({ ...s, pendingProductVerifications: s.pendingProductVerifications - 1 }));
+
+        // Optionally refetch
+        // fetchData();
     };
 
     const updateRole = async (userId: number, newRole: string) => {
@@ -241,10 +268,12 @@ export default function AdminDashboard() {
                 </div>
                 <nav className="space-y-1 flex-1">
                     {[
-                        { id: "verifications", icon: Shield, label: "Verifications", count: stats.pendingVerifications },
+                        { id: "seller-verifications", icon: Users, label: "Seller Verifications", count: stats.pendingVerifications },
+                        { id: "product-verifications", icon: Shield, label: "Product Verifications", count: stats.pendingProductVerifications },
+                        { id: "tracking", icon: Truck, label: "Order Tracking" },
                         { id: "users", icon: Users, label: "Users" },
                         ...(isSuperAdmin ? [{ id: "admins", icon: Crown, label: "Manage Admins" }] : []),
-                        { id: "products", icon: Package, label: "Products" },
+                        { id: "products", icon: Package, label: "All Products" },
                         { id: "orders", icon: ShoppingCart, label: "Orders" },
                     ].map(t => (
                         <button
@@ -271,9 +300,10 @@ export default function AdminDashboard() {
                     </header>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                         {[
-                            { label: "Pending Verifications", value: stats.pendingVerifications, icon: Shield, color: "bg-orange-100 text-orange-600" },
+                            { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
+                            { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
                             { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
                             { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
                             { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
@@ -287,8 +317,144 @@ export default function AdminDashboard() {
                         ))}
                     </div>
 
+                    {/* Product Verifications Tab */}
+                    {activeTab === "product-verifications" && (
+                        <div className="space-y-6">
+                            <h2 className="text-lg font-semibold flex items-center gap-2"><Shield className="h-5 w-5 text-yellow-500" /> Pending Products ({pendingProducts.length})</h2>
+                            {pendingProducts.length === 0 ? (
+                                <div className="p-12 text-center bg-card rounded-xl border border-dashed">
+                                    <Check className="h-12 w-12 mx-auto text-green-500 mb-4" />
+                                    <h3 className="font-semibold text-lg">No Pending Products</h3>
+                                    <p className="text-muted-foreground">All products have been reviewed.</p>
+                                </div>
+                            ) : (
+                                <div className="grid gap-6">
+                                    {pendingProducts.map(product => (
+                                        <div key={product.id} className="bg-card rounded-xl border p-6 flex flex-col md:flex-row gap-6">
+                                            {product.images && product.images[0] && (
+                                                <img src={product.images[0]} alt={product.name} className="w-24 h-24 object-cover rounded-lg border bg-white" />
+                                            )}
+                                            <div className="flex-1 space-y-2">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <h3 className="font-bold text-lg">{product.name}</h3>
+                                                        <p className="text-sm font-medium text-emerald-600">৳{product.price}</p>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
+                                                <div className="text-xs text-muted-foreground bg-muted p-2 rounded inline-block">
+                                                    Stock: {product.stock} • ID: {product.id} • Seller ID: {product.seller_id}
+                                                </div>
+                                            </div>
+                                            <div className="flex md:flex-col justify-end gap-2 md:w-36">
+                                                <Link href={`/admin/verify-product/${product.id}`}>
+                                                    <Button variant="outline" className="w-full gap-1 text-xs">View Details</Button>
+                                                </Link>
+                                                <Button onClick={() => verifyProduct(product.id, true)} className="bg-green-600 hover:bg-green-700 w-full text-xs">Approve</Button>
+                                                <Button onClick={() => {
+                                                    const reason = prompt("Reason for rejection:");
+                                                    if (reason) verifyProduct(product.id, false, reason);
+                                                }} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 w-full text-xs">Reject</Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Order Tracking Tab */}
+                    {activeTab === "tracking" && (
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <h2 className="text-xl font-bold flex items-center gap-2"><Truck className="h-5 w-5" /> Order Tracking</h2>
+                                <span className="text-sm text-muted-foreground">{orderItems.length} items</span>
+                            </div>
+
+                            <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-muted/50 text-left">
+                                            <tr>
+                                                <th className="p-3 font-medium text-muted-foreground">Order #</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Product</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Buyer</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Delivery Location</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Seller</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Date</th>
+                                                <th className="p-3 font-medium text-muted-foreground">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {orderItems.length === 0 ? (
+                                                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders found</td></tr>
+                                            ) : orderItems.map((item: any) => {
+                                                const statusColors: Record<string, string> = {
+                                                    pending: "bg-yellow-100 text-yellow-800",
+                                                    confirmed: "bg-blue-100 text-blue-800",
+                                                    processing: "bg-purple-100 text-purple-800",
+                                                    shipped: "bg-indigo-100 text-indigo-800",
+                                                    delivered: "bg-green-100 text-green-800",
+                                                    denied: "bg-red-100 text-red-800",
+                                                };
+                                                const status = item.item_status || item.order?.status || "pending";
+                                                const address = item.order?.shipping_address;
+
+                                                return (
+                                                    <tr key={item.id} className="border-t hover:bg-muted/20 transition">
+                                                        <td className="p-3">
+                                                            <div className="font-mono font-bold text-emerald-700">#{item.order?.order_number || item.order?.id}</div>
+                                                            <div className="text-xs text-muted-foreground">Item #{item.id}</div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="flex items-center gap-2">
+                                                                {item.product?.images?.[0] && (
+                                                                    <img src={item.product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
+                                                                )}
+                                                                <div>
+                                                                    <div className="font-medium">{item.product?.name || "Unknown"}</div>
+                                                                    <div className="text-xs text-muted-foreground">×{item.quantity}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
+                                                            <div className="text-xs text-muted-foreground">{item.order?.buyer?.email}</div>
+                                                            <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
+                                                        </td>
+                                                        <td className="p-3 max-w-[200px]">
+                                                            {address ? (
+                                                                <div className="text-xs">
+                                                                    <div className="font-medium">{address.fullName}</div>
+                                                                    <div>{address.address}</div>
+                                                                    <div>{address.district}, {address.division}</div>
+                                                                </div>
+                                                            ) : <span className="text-muted-foreground">—</span>}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <div className="font-medium">{item.seller?.username || "—"}</div>
+                                                            <div className="text-xs text-muted-foreground">{item.seller?.shop_location}</div>
+                                                        </td>
+                                                        <td className="p-3 text-xs">
+                                                            {item.order?.created_at ? new Date(item.order.created_at).toLocaleDateString() : "—"}
+                                                        </td>
+                                                        <td className="p-3">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
+                                                                {status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Seller Verifications Tab */}
-                    {activeTab === "verifications" && (
+                    {activeTab === "seller-verifications" && (
                         <div className="space-y-6">
                             {/* Banned / Terminated Sellers */}
                             {users.some(u => u.verification_status === "terminated") && (
@@ -349,33 +515,20 @@ export default function AdminDashboard() {
                                                 <div className="grid grid-cols-2 gap-4 text-sm bg-muted/30 p-4 rounded-lg">
                                                     <div>
                                                         <span className="text-muted-foreground block text-xs">Owner Name</span>
-                                                        <span className="font-medium">{seller.username} (Check ID)</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-muted-foreground block text-xs">Shop Type</span>
-                                                        <span className="font-medium">{seller.shop_type || "N/A"}</span>
-                                                    </div>
-                                                    <div>
-                                                        <span className="text-muted-foreground block text-xs">Location</span>
-                                                        <span className="font-medium flex items-center gap-1"><MapPin className="h-3 w-3" /> {seller.shop_location || "N/A"}</span>
+                                                        <span className="font-medium">{seller.username}</span>
                                                     </div>
                                                     <div>
                                                         <span className="text-muted-foreground block text-xs">Submitted At</span>
                                                         <span className="font-medium">{new Date(seller.created_at).toLocaleDateString()}</span>
                                                     </div>
                                                 </div>
-                                                {seller.identity_documents && seller.identity_documents.length > 0 && (
-                                                    <div className="flex gap-2 items-center text-sm">
-                                                        <span className="text-muted-foreground">ID Document:</span>
-                                                        <a href={seller.identity_documents[0]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:underline">
-                                                            View Document <ExternalLink className="h-3 w-3" />
-                                                        </a>
-                                                    </div>
-                                                )}
                                             </div>
                                             <div className="flex md:flex-col justify-end gap-2 md:w-32">
-                                                <Button onClick={() => verifySeller(seller.id, true)} className="bg-green-600 hover:bg-green-700 w-full">Approve</Button>
-                                                <Button onClick={() => verifySeller(seller.id, false)} variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 w-full">Reject</Button>
+                                                <Link href={`/admin/verify-seller/${seller.id}`}>
+                                                    <Button className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700">
+                                                        View Details <ExternalLink className="h-4 w-4" />
+                                                    </Button>
+                                                </Link>
                                             </div>
                                         </div>
                                     ))}
@@ -487,10 +640,10 @@ export default function AdminDashboard() {
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
                 <div className="flex items-center justify-around px-2 py-2">
                     {[
-                        { id: "verifications", icon: Shield, label: "Verify", count: stats.pendingVerifications },
+                        { id: "seller-verifications", icon: Store, label: "Sellers", count: stats.pendingSellerVerifications },
+                        { id: "product-verifications", icon: Shield, label: "Products", count: stats.pendingProductVerifications },
                         { id: "users", icon: Users, label: "Users" },
                         { id: "orders", icon: ShoppingCart, label: "Orders" },
-                        { id: "products", icon: Package, label: "Products" },
                     ].map(t => (
                         <button
                             key={t.id}

@@ -19,6 +19,7 @@ interface Product {
     images: string[] | null;
     category_id: number | null;
     seller_id: number;
+    eco_rating: number | null;
 }
 
 interface Category {
@@ -51,6 +52,7 @@ export default function CustomerShop() {
         const { data: productsData } = await supabase
             .from("products")
             .select("*")
+            .eq("status", "approved")
             .order("created_at", { ascending: false });
         if (productsData) setProducts(productsData);
         setLoading(false);
@@ -213,15 +215,19 @@ export default function CustomerShop() {
                                                     <img
                                                         src={product.images[0]}
                                                         alt={product.name}
+                                                        loading="lazy"
+                                                        decoding="async"
                                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     />
                                                 ) : (
                                                     <span className="text-5xl group-hover:scale-110 transition-transform duration-300">🌿</span>
                                                 )}
 
-                                                {/* Eco Badge */}
+                                                {/* Eco Badge with rating */}
                                                 <div className="absolute top-3 left-3">
-                                                    <span className="eco-badge">Eco</span>
+                                                    <span className="px-2 py-1 rounded-full bg-emerald-500 text-white text-[10px] font-bold shadow-sm flex items-center gap-1">
+                                                        🌿 {product.eco_rating || 80}% Eco
+                                                    </span>
                                                 </div>
 
                                                 {/* Wishlist Button */}

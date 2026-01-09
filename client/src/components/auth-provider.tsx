@@ -16,37 +16,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
-    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userRole, setUserRole] = useState<string | null>(localStorage.getItem("userRole"));
 
     const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0) => {
+        // Skip if already have a cached role
+        const cachedRole = localStorage.getItem("userRole");
+        if (cachedRole && retryCount === 0) {
+            setUserRole(cachedRole);
+            return;
+        }
+
         try {
-            const { data, error } = await supabase.from("users").select("role").eq("email", email).single();
+            // Reduced timeout from 15s to 5s for faster failure
+            const queryPromise = supabase.from("users").select("role").eq("email", email).single();
+            const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string }; status: number }>((resolve) =>
+                setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 5000)
+            );
+
+            const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
             if (!isMounted()) return;
 
             if (data) {
-                console.log("User role fetched:", data.role);
                 setUserRole(data.role);
+                localStorage.setItem("userRole", data.role);
             } else if (error && error.code === "PGRST116") {
-                // User doesn't exist in table yet - this might be a race condition during registration
-                // Retry a few times before falling back, as auth.tsx might still be creating the user
-                if (retryCount < 3) {
-                    console.log(`User not found, retrying in 500ms (attempt ${retryCount + 1}/3)...`);
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                // User doesn't exist - retry or create
+                if (retryCount < 2) {
+                    await new Promise(resolve => setTimeout(resolve, 300));
                     if (isMounted()) {
                         return fetchUserRole(email, isMounted, retryCount + 1);
                     }
                 } else {
-                    // After retries, default to buyer (user might need to complete registration)
-                    console.log("User not found after retries, defaulting to buyer");
-                    setUserRole("buyer");
+                    // Create user record
+                    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+                    const userId = `USR-${dateStr}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
+
+                    const { data: created, error: createErr } = await supabase.from("users").insert({
+                        user_id: userId,
+                        username: email.split("@")[0],
+                        full_name: email.split("@")[0],
+                        email: email,
+                        role: "buyer",
+                        saved_addresses: []
+                    }).select("role").single();
+
+                    if (!isMounted()) return;
+                    if (created) {
+                        setUserRole(created.role);
+                        localStorage.setItem("userRole", created.role);
+                    } else {
+                        setUserRole("buyer");
+                        localStorage.setItem("userRole", "buyer");
+                    }
                 }
             } else if (error) {
-                console.error("Error fetching user role:", error);
-                setUserRole("buyer");
+                // Use cached role or default to buyer
+                setUserRole(cachedRole || "buyer");
             }
         } catch (err) {
-            console.error("Error fetching user role:", err);
-            if (isMounted()) setUserRole("buyer");
+            if (isMounted()) setUserRole(cachedRole || "buyer");
         }
     };
 
@@ -90,30 +118,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const signOut = async () => {
         try {
-            await supabase.auth.signOut();
-            // Clear any local storage auth tokens manually as a fallback
-            localStorage.removeItem(`sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1].split('.')[0]}-auth-token`);
-            // Also clear generic Supabase keys if any
-            for (const key of Object.keys(localStorage)) {
-                if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                    localStorage.removeItem(key);
-                }
-            }
-
-            setUser(null);
-            setSession(null);
+            localStorage.removeItem("userRole");
             setUserRole(null);
+
+            // Add timeout to prevent hanging
+            const signOutPromise = supabase.auth.signOut();
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("SignOut timeout")), 3000)
+            );
+
+            await Promise.race([signOutPromise, timeoutPromise]).catch(err => {
+                console.warn("SignOut issue:", err.message);
+            });
         } catch (error) {
             console.error("Sign out error:", error);
         }
 
-        // Robust redirect to homepage
-        const origin = window.location.origin;
-        const base = import.meta.env.BASE_URL || '/';
-        const target = origin + (base.endsWith('/') ? base : base + '/');
+        // Always clear local state and storage regardless of Supabase response
+        for (const key of Object.keys(localStorage)) {
+            if (key.startsWith('sb-') && key.includes('-auth')) {
+                localStorage.removeItem(key);
+            }
+        }
 
-        console.log("Signing out and redirecting to:", target);
-        window.location.href = target;
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+
+        // Redirect to homepage
+        console.log("Redirecting to /");
+        window.location.href = "/";
     };
 
     return (

@@ -72,7 +72,7 @@ export default function Profile() {
                 console.warn("Profile loading safety timeout triggered");
                 setLoading(false);
             }
-        }, 10000);
+        }, 3000);
 
         if (authLoading) return; // Wait for auth to settle
 
@@ -98,7 +98,7 @@ export default function Profile() {
         try {
             // Add timeout protection to prevent infinite loading
             const timeoutPromise = new Promise<{ data: null; error: { message: string; code: string } }>((resolve) =>
-                setTimeout(() => resolve({ data: null, error: { message: "Query timeout", code: "TIMEOUT" } }), 8000)
+                setTimeout(() => resolve({ data: null, error: { message: "Query timeout", code: "TIMEOUT" } }), 2000)
             );
 
             const queryPromise = supabase.from("users").select("*").eq("email", user.email).single();
@@ -298,47 +298,16 @@ export default function Profile() {
     }
 
     if (!profile) {
+        // Auto-create profile silently and show loading
+        if (user?.email && !saving) {
+            createProfile();
+        }
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-4">
-                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl shadow-xl border border-emerald-100 p-8 max-w-md w-full">
-                    <div className="text-center mb-6">
-                        <div className="h-16 w-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <User className="h-8 w-8 text-emerald-600" />
-                        </div>
-                        <h2 className="text-2xl font-bold text-emerald-900">Complete Your Profile</h2>
-                        <p className="text-muted-foreground mt-2">It looks like your profile details are missing. Please let us know a bit about you to continue.</p>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <Label>Full Name</Label>
-                            <Input
-                                placeholder="Your Name"
-                                value={form.full_name}
-                                onChange={e => setForm({ ...form, full_name: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <Label>Username</Label>
-                            <Input
-                                placeholder="Username"
-                                value={form.username}
-                                onChange={e => setForm({ ...form, username: e.target.value })}
-                            />
-                        </div>
-                        <div>
-                            <Label>Phone</Label>
-                            <Input
-                                placeholder="Phone Number"
-                                value={form.phone}
-                                onChange={e => setForm({ ...form, phone: e.target.value })}
-                            />
-                        </div>
-                        <Button onClick={createProfile} disabled={saving} className="w-full bg-emerald-600 hover:bg-emerald-700">
-                            {saving ? <Loader2 className="animate-spin" /> : "Create Profile"}
-                        </Button>
-                    </div>
-                </motion.div>
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center">
+                <div className="text-center">
+                    <Leaf className="h-12 w-12 animate-pulse text-emerald-500 mx-auto mb-2" />
+                    <p className="text-emerald-600">Setting up your profile...</p>
+                </div>
             </div>
         );
     }

@@ -26,10 +26,14 @@ import Profile from "@/pages/customer/profile";
 // Seller Pages
 import SellerDashboard from "@/pages/seller/dashboard";
 import AddProduct from "@/pages/seller/add-product";
-import SellerProfile from "@/pages/seller/profile";
+
 
 // Admin Pages
 import AdminDashboard from "@/pages/admin/dashboard";
+import SellerVerificationDetail from "@/pages/admin/seller-verification";
+import ProductVerificationDetail from "@/pages/admin/product-verification";
+import FixDatabase from "@/pages/fix-db";
+import ShopProfile from "@/pages/shop-profile";
 
 function Router() {
   return (
@@ -47,17 +51,33 @@ function Router() {
       <Route path="/shop/order-confirmation/:id" component={OrderConfirmation} />
       <Route path="/shop/product/:id" component={ProductDetail} />
       <Route path="/shop/orders" component={CustomerOrders} />
+      <Route path="/shops/:id" component={ShopProfile} />
       <Route path="/profile" component={Profile} />
 
       {/* Seller Routes */}
       <Route path="/seller" component={SellerDashboard} />
       <Route path="/seller/add-product" component={AddProduct} />
-      <Route path="/seller/profile" component={SellerProfile} />
+
 
       {/* Admin Routes */}
       <Route path="/admin">
         <AdminRoute>
           <AdminDashboard />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/verify-seller/:id">
+        <AdminRoute>
+          <SellerVerificationDetail />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/verify-product/:id">
+        <AdminRoute>
+          <ProductVerificationDetail />
+        </AdminRoute>
+      </Route>
+      <Route path="/admin/db-fix">
+        <AdminRoute>
+          <FixDatabase />
         </AdminRoute>
       </Route>
 

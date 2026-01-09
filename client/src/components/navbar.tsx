@@ -88,7 +88,7 @@ export function NavBar({ onSearch }: NavBarProps) {
                                         </DropdownMenuItem>
                                     </Link>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+                                    <DropdownMenuItem onSelect={() => { console.log("Logout clicked"); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
                                         <LogOut className="mr-2 h-4 w-4" />
                                         <span>Log out</span>
                                     </DropdownMenuItem>

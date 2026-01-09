@@ -192,7 +192,7 @@ export default function AddProduct() {
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Seller</span>
                     </div>
                     <nav className="space-y-2">
-                        <Link href="/seller"><a className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><TrendingUp className="h-5 w-5" /> Dashboard</a></Link>
+                        <Link href="/seller" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"><TrendingUp className="h-5 w-5" /> Dashboard</Link>
                     </nav>
                 </aside>
                 <main className="lg:ml-64 p-8 w-full flex items-center justify-center">
@@ -229,29 +229,21 @@ export default function AddProduct() {
                 </div>
 
                 <nav className="space-y-2">
-                    <Link href="/seller">
-                        <a className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                            <TrendingUp className="h-5 w-5" />
-                            Dashboard
-                        </a>
+                    <Link href="/seller" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                        <TrendingUp className="h-5 w-5" />
+                        Dashboard
                     </Link>
-                    <Link href="/seller/products">
-                        <a className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                            <Package className="h-5 w-5" />
-                            My Products
-                        </a>
+                    <Link href="/seller/products" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                        <Package className="h-5 w-5" />
+                        My Products
                     </Link>
-                    <Link href="/seller/add-product">
-                        <a className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium">
-                            <Plus className="h-5 w-5" />
-                            Add Product
-                        </a>
+                    <Link href="/seller/add-product" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 text-primary font-medium">
+                        <Plus className="h-5 w-5" />
+                        Add Product
                     </Link>
-                    <Link href="/seller/orders">
-                        <a className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
-                            <ShoppingCart className="h-5 w-5" />
-                            Orders
-                        </a>
+                    <Link href="/seller/orders" className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors">
+                        <ShoppingCart className="h-5 w-5" />
+                        Orders
                     </Link>
                 </nav>
 
