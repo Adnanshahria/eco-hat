@@ -237,7 +237,14 @@ export default function Profile() {
             };
 
             console.log("Attempting to insert profile:", newProfile);
-            const { data, error } = await supabase.from("users").insert(newProfile).select().single();
+
+            // Timeout promise
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Profile creation timeout - network or DB issue")), 8000)
+            );
+
+            const dbPromise = supabase.from("users").insert(newProfile).select().single();
+            const { data, error } = await Promise.race([dbPromise, timeoutPromise]) as any;
 
             if (error) {
                 console.error("Insert error:", error);
