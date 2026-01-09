@@ -149,6 +149,48 @@ NOTIFY pgrst, 'reload schema';
         }
     };
 
+    const fixOrderRLS = async () => {
+        setLoading(true);
+        log("Applying RLS policies for Orders...");
+        try {
+            const { error } = await supabaseAdmin.rpc('exec_sql', {
+                sql: `
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
+DROP POLICY IF EXISTS "Users can insert their own orders" ON orders;
+
+CREATE POLICY "Users can view their own orders"
+ON orders FOR SELECT
+USING (
+  buyer_id IN (
+    SELECT id FROM users WHERE email = auth.jwt()->>'email'
+  )
+);
+
+CREATE POLICY "Users can insert their own orders"
+ON orders FOR INSERT
+WITH CHECK (
+  buyer_id IN (
+    SELECT id FROM users WHERE email = auth.jwt()->>'email'
+  )
+);
+NOTIFY pgrst, 'reload schema';
+`
+            });
+            if (error) {
+                log(`RLS Error: ${error.message}`);
+                log("Run manually in SQL Editor:");
+                log(`CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (buyer_id IN (SELECT id FROM users WHERE email = auth.jwt()->>'email'));`);
+            } else {
+                log("Order RLS policies applied.");
+            }
+        } catch (e: any) {
+            log(e.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const updateUserRole = async (role: string) => {
         if (!targetEmail) return log("Please enter an email address.");
         setLoading(true);
@@ -188,7 +230,10 @@ NOTIFY pgrst, 'reload schema';
                             <CheckCircle className="mr-2 h-4 w-4" /> Fix Product Schema & Visibility
                         </Button>
                         <Button onClick={fixOrderSchema} disabled={loading} variant="outline" className="w-full justify-start">
-                            <CheckCircle className="mr-2 h-4 w-4" /> Fix Order Schema (cod_charge)
+                            <CheckCircle className="mr-2 h-4 w-4" /> Fix Order Schema (Missing Columns)
+                        </Button>
+                        <Button onClick={fixOrderRLS} disabled={loading} variant="outline" className="w-full justify-start">
+                            <CheckCircle className="mr-2 h-4 w-4" /> Fix Order Visibility (RLS)
                         </Button>
                     </div>
 
