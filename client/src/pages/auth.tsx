@@ -61,6 +61,9 @@ export default function Auth() {
                         email,
                         role: actualRole
                     }, { onConflict: 'email' });
+
+                    // Cache role in localStorage immediately so navbar can use it
+                    localStorage.setItem("userRole", actualRole);
                 }
                 // Redirect to seller dashboard for uv-seller too
                 const redirectRole = role === 'seller' ? 'uv-seller' : role;
@@ -69,7 +72,11 @@ export default function Auth() {
                 const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw authError;
                 const { data: profile } = await supabase.from("users").select("role").eq("email", email).single();
-                if (profile) redirectByRole(profile.role as UserRole);
+                if (profile) {
+                    // Cache role in localStorage for navbar
+                    localStorage.setItem("userRole", profile.role);
+                    redirectByRole(profile.role as UserRole);
+                }
                 else setLocation("/");
             }
         } catch (err: any) {
