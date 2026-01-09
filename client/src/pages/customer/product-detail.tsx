@@ -7,6 +7,8 @@ import { useParams } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 import { NavBar } from "@/components/navbar";
+import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/hooks/use-toast";
 
 interface Review {
     id: number;
@@ -42,6 +44,8 @@ export default function ProductDetail() {
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
     const { addToCart } = useCart();
+    const { user } = useAuth();
+    const { toast } = useToast();
 
     useEffect(() => {
         if (id) {
@@ -119,10 +123,34 @@ export default function ProductDetail() {
     };
 
     const handleAddToCart = async () => {
+        if (!user) {
+            toast({
+                title: "Login Required",
+                description: "You must be logged in to add items to your cart.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         if (!product) return;
         setAdding(true);
-        await addToCart(product.id, quantity);
-        setAdding(false);
+
+        try {
+            await addToCart(product.id, quantity);
+            toast({
+                title: "Added to Cart",
+                description: `${quantity} x ${product.name} added successfully.`,
+                className: "bg-green-600 text-white border-green-600",
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to add item to cart. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setAdding(false);
+        }
     };
 
     const averageRating = reviews.length > 0
