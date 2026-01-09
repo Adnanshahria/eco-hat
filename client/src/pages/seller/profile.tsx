@@ -108,6 +108,7 @@ export default function SellerProfile() {
 
             await supabase.from("users").update({
                 verification_status: "pending",
+                role: "uv-seller", // Set role to unverified seller
                 identity_documents: [documentUrl],
             }).eq("id", profile.id);
 

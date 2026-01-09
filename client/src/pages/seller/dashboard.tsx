@@ -221,6 +221,7 @@ export default function SellerDashboard() {
             console.log("DEBUG: Submitting verification...", { sellerId });
             const { error: updateError } = await supabase.from("users").update({
                 verification_status: "pending",
+                role: "uv-seller", // Set role to unverified seller
                 identity_documents: [documentUrl],
             }).eq("id", sellerId);
 
@@ -233,7 +234,7 @@ export default function SellerDashboard() {
 
             alert("Verification documents submitted!");
             setSelectedFile(null);
-            setProfile((prev: any) => ({ ...prev, verification_status: "pending", identity_documents: [documentUrl] }));
+            setProfile((prev: any) => ({ ...prev, verification_status: "pending", role: "uv-seller", identity_documents: [documentUrl] }));
         } catch (error) {
             console.error(error);
             alert("Upload failed.");
