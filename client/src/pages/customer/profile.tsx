@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, User, Mail, Phone, MapPin, Save, Loader2, Check, Edit2, Plus, Trash2, Leaf, Home, LayoutDashboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -63,16 +63,26 @@ export default function Profile() {
         isDefault: false,
     });
 
-    useEffect(() => { fetchProfile(); }, [user]);
+    const fetchedRef = useRef(false);
+
+    useEffect(() => {
+        if (user?.email && !fetchedRef.current) {
+            fetchedRef.current = true;
+            fetchProfile();
+        } else if (!user?.email) {
+            setLoading(false);
+        }
+    }, [user]);
 
     const fetchProfile = async () => {
-        console.log("Fetching profile for user:", user);
+        console.log("Fetching profile for user:", user?.email);
         if (!user?.email) {
             console.log("No user email found");
             setLoading(false);
             return;
         }
 
+        console.log("Starting Supabase query...");
         try {
             const { data, error } = await supabase.from("users").select("*").eq("email", user.email).single();
             console.log("Profile fetch result:", { data, error });
@@ -193,8 +203,23 @@ export default function Profile() {
     };
 
     const createProfile = async () => {
+        console.log("createProfile called");
+        if (!user || !user.email) {
+            console.error("No user or email available for createProfile");
+            alert("User authentication error. Please try logging in again.");
+            return;
+        }
+
         setSaving(true);
         try {
+            // Check if user already exists to avoid duplicate key error
+            const { data: existing } = await supabase.from("users").select("id").eq("email", user.email).single();
+            if (existing) {
+                console.log("User already exists, fetching instead of creating");
+                await fetchProfile();
+                return;
+            }
+
             // Generate ID logic (simplified)
             const prefix = "USR";
             const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
@@ -203,17 +228,23 @@ export default function Profile() {
 
             const newProfile = {
                 user_id: newUserId,
-                username: form.username || user?.email?.split("@")[0] || "User",
+                username: form.username || user.email.split("@")[0] || "User",
                 full_name: form.full_name || "New User",
-                email: user!.email!,
+                email: user.email,
                 phone: form.phone,
                 bio: form.bio,
                 role: "buyer"
             };
 
+            console.log("Attempting to insert profile:", newProfile);
             const { data, error } = await supabase.from("users").insert(newProfile).select().single();
 
-            if (error) throw error;
+            if (error) {
+                console.error("Insert error:", error);
+                throw error;
+            }
+
+            console.log("Profile created successfully:", data);
             if (data) {
                 setProfile(data);
                 setSaved(true);
@@ -221,7 +252,7 @@ export default function Profile() {
             }
         } catch (err: any) {
             console.error("Create profile error:", err);
-            alert("Failed to create profile: " + err.message);
+            alert("Failed to create profile: " + (err.message || "Unknown error"));
         } finally {
             setSaving(false);
         }
