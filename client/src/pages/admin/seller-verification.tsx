@@ -30,6 +30,9 @@ export default function SellerVerificationDetail() {
     const [seller, setSeller] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
+    const [showModal, setShowModal] = useState(false);
+    const [modalAction, setModalAction] = useState<'approve' | 'reject' | null>(null);
+    const [rejectionReason, setRejectionReason] = useState("");
 
     useEffect(() => {
         if (id) fetchSeller();
@@ -51,26 +54,29 @@ export default function SellerVerificationDetail() {
         setLoading(false);
     };
 
-    const verifySeller = async (approved: boolean) => {
-        if (!seller) return;
-        if (!confirm(`Are you sure you want to ${approved ? "APPROVE" : "REJECT"} this seller?`)) return;
+    const openModal = (action: 'approve' | 'reject') => {
+        setModalAction(action);
+        setRejectionReason("");
+        setShowModal(true);
+    };
+
+    const confirmAction = async () => {
+        if (!seller || !modalAction) return;
 
         setProcessing(true);
-        const status = approved ? "verified" : "rejected";
+        setShowModal(false);
 
-        // If rejecting, ask for reason
-        let rejectionReason = "";
-        if (!approved) {
-            rejectionReason = prompt("Reason for rejection:") || "Documents did not match requirements.";
-        }
+        const approved = modalAction === 'approve';
+        const status = approved ? "verified" : "rejected";
+        const reason = rejectionReason || "Documents did not match requirements.";
 
         const updateData: any = { verification_status: status };
-        if (!approved) updateData.rejection_reason = rejectionReason;
+        if (!approved) updateData.rejection_reason = reason;
 
         const { error } = await supabase.from("users").update(updateData).eq("id", seller.id);
 
         if (error) {
-            alert("Error updating status");
+            console.error("Error updating status:", error);
             setProcessing(false);
             return;
         }
@@ -81,7 +87,7 @@ export default function SellerVerificationDetail() {
             approved ? "Seller Verification Approved" : "Seller Verification Rejected",
             approved
                 ? "Congratulations! Your seller account has been approved. You can now list products."
-                : `Your seller verification request was rejected. Reason: ${rejectionReason}`,
+                : `Your seller verification request was rejected. Reason: ${reason}`,
             approved ? "success" : "error"
         );
 
@@ -221,12 +227,12 @@ export default function SellerVerificationDetail() {
                             </p>
 
                             <div className="flex flex-col gap-3">
-                                <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={() => verifySeller(true)} disabled={processing}>
-                                    {processing ? <Loader2 className="animate-spin" /> : <Check className="h-5 w-5" />}
+                                <Button size="lg" className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2" onClick={() => openModal('approve')} disabled={processing}>
+                                    {processing && modalAction === 'approve' ? <Loader2 className="animate-spin" /> : <Check className="h-5 w-5" />}
                                     Approve Seller
                                 </Button>
-                                <Button size="lg" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2" onClick={() => verifySeller(false)} disabled={processing}>
-                                    {processing ? <Loader2 className="animate-spin" /> : <X className="h-5 w-5" />}
+                                <Button size="lg" variant="outline" className="w-full border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 gap-2" onClick={() => openModal('reject')} disabled={processing}>
+                                    {processing && modalAction === 'reject' ? <Loader2 className="animate-spin" /> : <X className="h-5 w-5" />}
                                     Reject Application
                                 </Button>
                             </div>
@@ -234,6 +240,48 @@ export default function SellerVerificationDetail() {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            {showModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl"
+                    >
+                        <h3 className="text-lg font-bold mb-2">
+                            {modalAction === 'approve' ? '✅ Approve Seller?' : '❌ Reject Application?'}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                            {modalAction === 'approve'
+                                ? 'This will allow the seller to list products on the marketplace.'
+                                : 'Please provide a reason for rejection. The seller will be notified.'}
+                        </p>
+
+                        {modalAction === 'reject' && (
+                            <textarea
+                                className="w-full border rounded-lg p-3 text-sm mb-4 focus:ring-2 focus:ring-primary focus:border-transparent"
+                                placeholder="Reason for rejection..."
+                                rows={3}
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                            />
+                        )}
+
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowModal(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                className={`flex-1 ${modalAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+                                onClick={confirmAction}
+                            >
+                                {modalAction === 'approve' ? 'Approve' : 'Reject'}
+                            </Button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }
