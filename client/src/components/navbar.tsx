@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { AppLink as Link } from "@/components/app-link";
 import {
-    Menu, X, Search, ShoppingBag, Leaf, User as UserIcon, LogOut, LayoutDashboard
+    Menu, X, Search, ShoppingCart, Leaf, User as UserIcon, LogOut, LayoutDashboard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { NotificationCenter } from "./notifications";
+import { useCart } from "@/lib/cart-context";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -25,6 +26,8 @@ export function NavBar({ onSearch }: NavBarProps) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const { user, userRole, signOut } = useAuth();
+    const { items } = useCart();
+    const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value;
@@ -62,11 +65,12 @@ export function NavBar({ onSearch }: NavBarProps) {
 
                         <Link href="/shop/cart">
                             <Button variant="ghost" size="icon" className="relative">
-                                <ShoppingBag className="h-5 w-5" />
-                                {/* Cart Badge - can be connected to context */}
-                                <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                                    3
-                                </span>
+                                <ShoppingCart className="h-5 w-5" />
+                                {cartCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                                        {cartCount > 99 ? '99+' : cartCount}
+                                    </span>
+                                )}
                             </Button>
                         </Link>
 
