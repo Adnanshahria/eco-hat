@@ -51,15 +51,19 @@ export default function Auth() {
                     const userId = await generateUserId(role);
 
                     // Use full name as default username
+                    // Sellers start as uv-seller until verified
+                    const actualRole = role === 'seller' ? 'uv-seller' : role;
                     await supabase.from("users").insert({
                         user_id: userId,
                         username: fullName, // Name as default username
                         full_name: fullName,
                         email,
-                        role
+                        role: actualRole
                     });
                 }
-                redirectByRole(role);
+                // Redirect to seller dashboard for uv-seller too
+                const redirectRole = role === 'seller' ? 'uv-seller' : role;
+                redirectByRole(redirectRole);
             } else {
                 const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
                 if (authError) throw authError;
@@ -77,7 +81,8 @@ export default function Auth() {
     const redirectByRole = (userRole: string) => {
         switch (userRole) {
             case "admin": setLocation("/admin"); break;
-            case "seller": setLocation("/seller"); break;
+            case "seller":
+            case "uv-seller": setLocation("/seller"); break;
             default: setLocation("/shop");
         }
     };
