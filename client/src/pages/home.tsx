@@ -103,22 +103,22 @@ export default function Home() {
       <NavBar />
 
       <section className="relative overflow-hidden bg-gradient-natural leaf-pattern">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-center lg:text-left frosted-glass rounded-2xl p-6 lg:p-10 hover:border-primary/30 transition-colors"
+              className="text-center lg:text-left frosted-glass rounded-2xl p-4 lg:p-6 hover:border-primary/30 transition-colors"
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6">
                 <Leaf className="h-4 w-4" />
                 {t('landing.freshOrganic')}
               </span>
-              <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-6">
+              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
                 <span className="text-gradient-green">{t('landing.heroTitle')}</span>
               </h1>
-              <p className="text-lg text-muted-foreground mb-8 max-w-lg mx-auto lg:mx-0">
+              <p className="text-base text-muted-foreground mb-6 max-w-lg mx-auto lg:mx-0">
                 {t('landing.heroSubtitle')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 items-center lg:items-start">
@@ -134,7 +134,7 @@ export default function Home() {
                   </Button>
                 </a>
               </div>
-              <div className="grid grid-cols-3 gap-4 sm:gap-6 mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-border/50">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-6 pt-4 sm:pt-6 border-t border-border/50">
                 <div className="border border-border rounded-lg p-3 sm:p-4 text-center hover:border-primary/30 transition-colors">
                   <p className="text-xl sm:text-2xl font-bold font-display text-primary">500+</p>
                   <p className="text-xs sm:text-sm text-muted-foreground">{t('landing.stats.ecoProducts')}</p>
