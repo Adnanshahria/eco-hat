@@ -332,6 +332,31 @@ export default function SellerDashboard() {
                     note
                 }),
             }).catch(err => console.error("Failed to send admin email:", err));
+
+            // Notify Seller (in-app + email)
+            if (sellerId) {
+                await createNotification(
+                    sellerId,
+                    `📦 Order #${orderData.order_number || orderId} Update`,
+                    `Status changed to ${newStatus.replace(/_/g, " ")}. ${note}`,
+                    "info"
+                );
+
+                // Get seller email and send notification
+                const { data: sellerData } = await supabase.from("users").select("email, username").eq("id", sellerId).single();
+                if (sellerData?.email) {
+                    fetch("/api/notifications/seller/order-status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            email: sellerData.email,
+                            orderNumber: orderData.order_number || orderId,
+                            status: newStatus,
+                            buyerName: "Customer"
+                        }),
+                    }).catch(err => console.error("Failed to send seller email:", err));
+                }
+            }
         }
     };
 

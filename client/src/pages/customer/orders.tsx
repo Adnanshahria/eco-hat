@@ -95,13 +95,45 @@ export default function CustomerOrders() {
 
     const markDelivered = async (orderId: number) => {
         // Update order status
-        const { data: orderData } = await supabase.from("orders").select("tracking_history").eq("id", orderId).single();
+        const { data: orderData } = await supabase.from("orders").select("tracking_history, order_number").eq("id", orderId).single();
         const history = orderData?.tracking_history || [];
         history.push({ status: "delivered", timestamp: new Date().toISOString(), note: "✅ Package received by buyer" });
         await supabase.from("orders").update({ status: "delivered", tracking_history: history }).eq("id", orderId);
 
         // Update all order items
         await supabase.from("order_items").update({ item_status: "delivered" }).eq("order_id", orderId);
+
+        // Get order items to find sellers
+        const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
+        const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
+
+        // Notify sellers via email
+        for (const sellerId of sellerIds) {
+            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+            if (sellerData?.email) {
+                fetch("/api/notifications/seller/order-status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: sellerData.email,
+                        orderNumber: orderData?.order_number || orderId,
+                        status: "delivered",
+                        buyerName: "Customer"
+                    }),
+                }).catch(err => console.error("Failed to send seller email:", err));
+            }
+        }
+
+        // Notify admin via email
+        fetch("/api/notifications/admin/order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderNumber: orderData?.order_number || orderId,
+                status: "delivered",
+                note: "Package received by buyer"
+            }),
+        }).catch(err => console.error("Failed to send admin email:", err));
 
         // Update local state
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: "delivered" } : o));
@@ -111,13 +143,45 @@ export default function CustomerOrders() {
         if (!confirm("Are you sure you want to cancel this order?")) return;
 
         // Update order status to cancelled
-        const { data: orderData } = await supabase.from("orders").select("tracking_history").eq("id", orderId).single();
+        const { data: orderData } = await supabase.from("orders").select("tracking_history, order_number").eq("id", orderId).single();
         const history = orderData?.tracking_history || [];
         history.push({ status: "cancelled", timestamp: new Date().toISOString(), note: "❌ Order cancelled by customer" });
         await supabase.from("orders").update({ status: "cancelled", tracking_history: history }).eq("id", orderId);
 
         // Update all order items
         await supabase.from("order_items").update({ item_status: "cancelled" }).eq("order_id", orderId);
+
+        // Get order items to find sellers
+        const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
+        const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
+
+        // Notify sellers via email
+        for (const sellerId of sellerIds) {
+            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+            if (sellerData?.email) {
+                fetch("/api/notifications/seller/order-status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: sellerData.email,
+                        orderNumber: orderData?.order_number || orderId,
+                        status: "cancelled",
+                        buyerName: "Customer"
+                    }),
+                }).catch(err => console.error("Failed to send seller email:", err));
+            }
+        }
+
+        // Notify admin via email
+        fetch("/api/notifications/admin/order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderNumber: orderData?.order_number || orderId,
+                status: "cancelled",
+                note: "Order cancelled by customer"
+            }),
+        }).catch(err => console.error("Failed to send admin email:", err));
 
         // Update local state
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o));
