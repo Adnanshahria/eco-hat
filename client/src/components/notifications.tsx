@@ -160,9 +160,9 @@ export function NotificationCenter() {
                                                                     timeZone: "Asia/Dhaka",
                                                                     month: "short",
                                                                     day: "numeric",
-                                                                    hour: "numeric",
+                                                                    hour: "2-digit",
                                                                     minute: "2-digit",
-                                                                    hour12: true
+                                                                    hour12: false
                                                                 })}
                                                             </span>
                                                             {expandedId === n.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
