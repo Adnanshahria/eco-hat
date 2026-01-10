@@ -1,13 +1,176 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard } from "lucide-react";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/components/notifications";
 import { AppLink as Link } from "@/components/app-link";
+
+// Send Notification Section Component
+function SendNotificationSection({ users }: { users: User[] }) {
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [roleFilter, setRoleFilter] = useState<string>("all");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [title, setTitle] = useState("");
+    const [message, setMessage] = useState("");
+    const [notifType, setNotifType] = useState<"info" | "success" | "warning" | "error">("info");
+    const [sending, setSending] = useState(false);
+    const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+    const filteredUsers = users.filter(u => {
+        const matchesRole = roleFilter === "all" || u.role === roleFilter;
+        const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesRole && matchesSearch;
+    });
+
+    const selectedUser = users.find(u => u.id === selectedUserId);
+
+    const handleSend = async () => {
+        if (!selectedUserId || !title.trim() || !message.trim()) {
+            setResult({ ok: false, text: "Please select a user and fill in title & message" });
+            return;
+        }
+        setSending(true);
+        setResult(null);
+        try {
+            await createNotification(selectedUserId, title, message, notifType);
+            setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
+            setTitle("");
+            setMessage("");
+            setSelectedUserId(null);
+        } catch (err: any) {
+            setResult({ ok: false, text: err.message || "Failed to send notification" });
+        } finally {
+            setSending(false);
+        }
+    };
+
+    return (
+        <div className="bg-card rounded-xl border p-6 mb-8">
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Bell className="h-5 w-5 text-primary" /> Send Notification
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-6">
+                {/* User Selection */}
+                <div className="space-y-4">
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search users..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+                        <select
+                            className="border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={roleFilter}
+                            onChange={e => setRoleFilter(e.target.value)}
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="buyer">Buyers</option>
+                            <option value="seller">Sellers</option>
+                            <option value="uv-seller">Unverified Sellers</option>
+                            <option value="admin">Admins</option>
+                        </select>
+                    </div>
+
+                    <div className="border rounded-lg max-h-48 overflow-auto">
+                        {filteredUsers.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground text-sm">No users found</div>
+                        ) : filteredUsers.slice(0, 20).map(u => (
+                            <div
+                                key={u.id}
+                                onClick={() => setSelectedUserId(u.id)}
+                                className={`p-3 border-b last:border-b-0 cursor-pointer flex items-center justify-between transition ${selectedUserId === u.id ? "bg-primary/10" : "hover:bg-muted/50"}`}
+                            >
+                                <div>
+                                    <p className="font-medium text-sm">{u.username}</p>
+                                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                                </div>
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                                        u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
+                                            u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
+                                                'bg-gray-100 text-gray-700'
+                                    }`}>
+                                    {u.role}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                    {selectedUser && (
+                        <div className="bg-primary/10 rounded-lg p-3 text-sm">
+                            <span className="text-muted-foreground">Sending to: </span>
+                            <span className="font-medium text-primary">{selectedUser.username}</span>
+                        </div>
+                    )}
+                </div>
+
+                {/* Notification Form */}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Title</label>
+                        <Input
+                            placeholder="Notification title"
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Message</label>
+                        <textarea
+                            placeholder="Write your message here..."
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            className="w-full border rounded-lg p-3 text-sm bg-background resize-none h-24"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Type</label>
+                        <div className="flex gap-2">
+                            {(["info", "success", "warning", "error"] as const).map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setNotifType(t)}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition ${notifType === t
+                                            ? t === "info" ? "bg-blue-500 text-white" :
+                                                t === "success" ? "bg-green-500 text-white" :
+                                                    t === "warning" ? "bg-yellow-500 text-white" :
+                                                        "bg-red-500 text-white"
+                                            : "bg-muted hover:bg-muted/80"
+                                        }`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {result && (
+                        <div className={`p-3 rounded-lg text-sm ${result.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                            {result.text}
+                        </div>
+                    )}
+
+                    <Button
+                        onClick={handleSend}
+                        disabled={sending || !selectedUserId || !title || !message}
+                        className="w-full gap-2"
+                    >
+                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        {sending ? "Sending..." : "Send Notification"}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 interface User {
     id: number;
@@ -396,22 +559,27 @@ export default function AdminDashboard() {
 
                     {/* Stats - Only on Overview Tab */}
                     {activeTab === "overview" && (
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                            {[
-                                { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
-                                { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
-                                { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
-                                { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
-                                { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
-                            ].map((s, i) => (
-                                <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
-                                        <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                                {[
+                                    { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
+                                    { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
+                                    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
+                                    { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
+                                    { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
+                                ].map((s, i) => (
+                                    <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
+                                            <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {/* Send Notification Section */}
+                            <SendNotificationSection users={users} />
+                        </>
                     )}
 
                     {/* Product Verifications Tab */}

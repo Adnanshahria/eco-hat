@@ -1,0 +1,96 @@
+<!-- Subject: Order Delivered! #{{ order_number }} | EcoHaat -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0fdf4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background-color: #f0fdf4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width: 520px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌱 EcoHaat</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Delivery
+                                Confirmation</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <div style="text-align: center; margin-bottom: 24px;">
+                                <div style="font-size: 48px;">🎉</div>
+                                <h2 style="margin: 16px 0 8px; color: #15803d; font-size: 24px;">Order Delivered!</h2>
+                                <p style="margin: 0; color: #6b7280; font-size: 14px;">Your eco-friendly products have
+                                    arrived</p>
+                            </div>
+
+                            <!-- Order Info Box -->
+                            <div style="background-color: #f0fdf4; border-radius: 12px; padding: 20px; margin: 24px 0;">
+                                <table width="100%" cellspacing="0" cellpadding="0">
+                                    <tr>
+                                        <td style="padding: 8px 0; border-bottom: 1px solid #dcfce7;">
+                                            <span style="color: #6b7280; font-size: 13px;">Order Number</span>
+                                        </td>
+                                        <td
+                                            style="padding: 8px 0; border-bottom: 1px solid #dcfce7; text-align: right;">
+                                            <span style="color: #15803d; font-weight: 600; font-size: 14px;">{{
+                                                order_number }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0;">
+                                            <span style="color: #6b7280; font-size: 13px;">Delivered On</span>
+                                        </td>
+                                        <td style="padding: 8px 0; text-align: right;">
+                                            <span style="color: #374151; font-size: 14px;">{{ delivery_date }}</span>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <!-- Thank You Message -->
+                            <div
+                                style="text-align: center; padding: 20px; background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; margin: 24px 0;">
+                                <p style="margin: 0; color: #15803d; font-size: 14px; line-height: 1.6;">
+                                    🌍 <strong>Thank you for shopping sustainably!</strong><br>
+                                    Your purchase helps support local artisans and reduces environmental impact.
+                                </p>
+                            </div>
+
+                            <!-- Review CTA -->
+                            <div style="text-align: center; margin-top: 24px;">
+                                <p style="margin: 0 0 16px; color: #6b7280; font-size: 13px;">How was your experience?
+                                </p>
+                                <a href="{{ review_url }}"
+                                    style="display: inline-block; background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 14px;">Leave
+                                    a Review ⭐</a>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px 32px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                Need help? Reply to this email or contact support.<br>
+                                © 2026 EcoHaat. Making sustainable living accessible.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
