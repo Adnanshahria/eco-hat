@@ -368,7 +368,7 @@ export default function AdminDashboard() {
         const { data: itemsData } = await supabase
             .from("order_items")
             .select(`
-                id, quantity, price_at_purchase, item_status,
+                id, quantity, price_at_purchase, item_status, payment_received, payment_sent_to_seller,
                 order:orders (id, order_number, status, phone, shipping_address, created_at, buyer:users!orders_buyer_id_fkey(id, username, email)),
                 product:products (id, name, images),
                 seller:users!order_items_seller_id_fkey (id, username, email, shop_location)
@@ -467,6 +467,25 @@ export default function AdminDashboard() {
                 }
             }
         }
+    };
+
+    // Payment tracking functions
+    const markPaymentReceived = async (itemId: number) => {
+        await supabase.from("order_items").update({ payment_received: true }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, payment_received: true } : i));
+    };
+
+    const markPaymentSentToSeller = async (itemId: number, sellerId: number, orderNumber: string, amount: number) => {
+        await supabase.from("order_items").update({ payment_sent_to_seller: true }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, payment_sent_to_seller: true } : i));
+
+        // Notify seller
+        await createNotification(
+            sellerId,
+            "💰 Payment Received!",
+            `Payment of ৳${amount.toFixed(0)} for order #${orderNumber} has been sent to your account.`,
+            "success"
+        );
     };
 
     // ... inside component ...
@@ -733,10 +752,11 @@ export default function AdminDashboard() {
                                                     <th className="p-3 font-medium text-muted-foreground">Order #</th>
                                                     <th className="p-3 font-medium text-muted-foreground">Product</th>
                                                     <th className="p-3 font-medium text-muted-foreground">Buyer</th>
-                                                    <th className="p-3 font-medium text-muted-foreground">Delivery Location</th>
                                                     <th className="p-3 font-medium text-muted-foreground">Seller</th>
-                                                    <th className="p-3 font-medium text-muted-foreground">Date</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Earning</th>
                                                     <th className="p-3 font-medium text-muted-foreground">Status</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Buyer Paid</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Seller Paid</th>
                                                     <th className="p-3 font-medium text-muted-foreground">Actions</th>
                                                 </tr>
                                             </thead>
@@ -774,29 +794,36 @@ export default function AdminDashboard() {
                                                             </td>
                                                             <td className="p-3">
                                                                 <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
-                                                                <div className="text-xs text-muted-foreground">{item.order?.buyer?.email}</div>
                                                                 <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
-                                                            </td>
-                                                            <td className="p-3 max-w-[200px]">
-                                                                {address ? (
-                                                                    <div className="text-xs">
-                                                                        <div className="font-medium">{address.fullName}</div>
-                                                                        <div>{address.address}</div>
-                                                                        <div>{address.district}, {address.division}</div>
-                                                                    </div>
-                                                                ) : <span className="text-muted-foreground">—</span>}
                                                             </td>
                                                             <td className="p-3">
                                                                 <div className="font-medium">{item.seller?.username || "—"}</div>
-                                                                <div className="text-xs text-muted-foreground">{item.seller?.shop_location}</div>
                                                             </td>
-                                                            <td className="p-3 text-xs">
-                                                                {item.order?.created_at ? new Date(item.order.created_at).toLocaleDateString() : "—"}
+                                                            <td className="p-3">
+                                                                <div className="font-bold text-green-600">৳{item.price_at_purchase * item.quantity}</div>
                                                             </td>
                                                             <td className="p-3">
                                                                 <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
-                                                                    {status}
+                                                                    {status.replace(/_/g, " ")}
                                                                 </span>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                {item.payment_received ? (
+                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ Received</span>
+                                                                ) : status === "delivered" ? (
+                                                                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => markPaymentReceived(item.id)}>💵 Mark Received</Button>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground">Pending</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                {item.payment_sent_to_seller ? (
+                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ Paid</span>
+                                                                ) : item.payment_received ? (
+                                                                    <Button size="sm" variant="outline" className="h-7 text-xs bg-blue-50" onClick={() => markPaymentSentToSeller(item.id, item.seller?.id, item.order?.order_number || String(item.order?.id), item.price_at_purchase * item.quantity)}>💸 Pay Seller</Button>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                                )}
                                                             </td>
                                                             <td className="p-3">
                                                                 <select
@@ -1001,10 +1028,10 @@ export default function AdminDashboard() {
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Mobile Bottom Navigation */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
+            < nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom" >
                 <div className="flex items-center justify-around px-1 py-2">
                     {[
                         { id: "overview", route: "/admin", icon: LayoutDashboard, label: "Overview" },
@@ -1029,7 +1056,7 @@ export default function AdminDashboard() {
                         <span className="text-xs font-medium">Logout</span>
                     </button>
                 </div>
-            </nav>
-        </div>
+            </nav >
+        </div >
     );
 }

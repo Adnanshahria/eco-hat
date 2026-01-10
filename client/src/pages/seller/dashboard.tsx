@@ -876,19 +876,32 @@ export default function SellerDashboard() {
                                     </div>
                                     <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
                                         <div className="p-4 border-b"><h2 className="font-semibold">{t('sellerDashboard.earningsTab.recentTransactions')}</h2></div>
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.orderId')}</th><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.status')}</th><th className="text-right p-3">{t('sellerDashboard.table.earning')}</th></tr></thead>
-                                            <tbody>
-                                                {orders.filter(o => o.item_status === "confirmed" || (o as any).order?.status === "delivered").map(o => (
-                                                    <tr key={o.id} className="border-t">
-                                                        <td className="p-3 font-mono">#{o.order?.order_number || o.order?.id}</td>
-                                                        <td className="p-3">{o.product?.name} × {o.quantity}</td>
-                                                        <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${statusColors[(o as any).order?.status || "pending"]}`}>{t(`status.${(o as any).order?.status || "pending"}`)}</span></td>
-                                                        <td className="p-3 text-right font-bold text-green-600">৳{o.seller_earning || o.price_at_purchase * o.quantity}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-sm">
+                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.orderId')}</th><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.status')}</th><th className="text-left p-3">Payment</th><th className="text-right p-3">{t('sellerDashboard.table.earning')}</th></tr></thead>
+                                                <tbody>
+                                                    {orders.filter(o => o.item_status === "delivered" || o.item_status === "confirmed" || (o as any).order?.status === "delivered").map(o => (
+                                                        <tr key={o.id} className="border-t">
+                                                            <td className="p-3 font-mono">#{o.order?.order_number || o.order?.id}</td>
+                                                            <td className="p-3">{o.product?.name} × {o.quantity}</td>
+                                                            <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${statusColors[(o as any).order?.status || "pending"]}`}>{t(`status.${(o as any).order?.status || "pending"}`)}</span></td>
+                                                            <td className="p-3">
+                                                                {(o as any).payment_sent_to_seller ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-700 font-medium">✓ Paid</span>
+                                                                ) : (o as any).payment_received ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-yellow-100 text-yellow-700 font-medium">⏳ Processing</span>
+                                                                ) : (o as any).item_status === "delivered" || (o as any).order?.status === "delivered" ? (
+                                                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 font-medium">📍 Awaiting COD</span>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3 text-right font-bold text-green-600">৳{o.seller_earning || o.price_at_purchase * o.quantity}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             )
