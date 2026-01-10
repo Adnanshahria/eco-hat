@@ -23,7 +23,39 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
-    chunkSizeWarningLimit: 1600,
+    chunkSizeWarningLimit: 600,
+    // Optimize for smaller bundles
+    target: "es2020",
+    minify: "esbuild",
+    cssCodeSplit: true,
+    // Manual chunk splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Core React
+          "vendor-react": ["react", "react-dom"],
+          // UI Components
+          "vendor-radix": [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-dropdown-menu",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-toast",
+            "@radix-ui/react-tooltip",
+          ],
+          // Animation library
+          "vendor-motion": ["framer-motion"],
+          // Data fetching
+          "vendor-query": ["@tanstack/react-query"],
+          // Supabase
+          "vendor-supabase": ["@supabase/supabase-js"],
+        },
+        // Optimize chunk file names
+        chunkFileNames: "assets/js/[name]-[hash].js",
+        entryFileNames: "assets/js/[name]-[hash].js",
+        assetFileNames: "assets/[ext]/[name]-[hash].[ext]",
+      },
+    },
   },
   server: {
     host: "0.0.0.0",
