@@ -128,22 +128,24 @@ export async function registerRoutes(
       // Fetch all admin users from database
       const admins = await db.select({ email: users.email }).from(users).where(eq(users.role, "admin"));
 
-      if (admins.length === 0) {
-        console.warn("No admin users found in database");
+      const recipients = new Set<string>();
+      admins.forEach(a => { if (a.email) recipients.add(a.email); });
+      if (process.env.ADMIN_EMAIL) recipients.add(process.env.ADMIN_EMAIL);
+
+      if (recipients.size === 0) {
+        console.warn("No admin emails found (DB or env)");
         return res.json({ success: true, message: "No admins to notify" });
       }
 
-      // Send email to each admin
-      for (const admin of admins) {
-        if (admin.email) {
-          await sendNewOrderNotificationToAdmin(admin.email, orderNumber, parseFloat(total) || 0, buyerName || "Customer").catch(
-            err => console.error(`Failed to email admin ${admin.email}:`, err)
-          );
-        }
+      // Send email to each unique admin
+      for (const email of recipients) {
+        await sendNewOrderNotificationToAdmin(email, orderNumber, parseFloat(total) || 0, buyerName || "Customer").catch(
+          err => console.error(`Failed to email admin ${email}:`, err)
+        );
       }
 
-      console.log(`✅ New order emails sent to ${admins.length} admins`);
-      res.json({ success: true, adminCount: admins.length });
+      console.log(`✅ New order emails sent to ${recipients.size} admins`);
+      res.json({ success: true, adminCount: recipients.size });
     } catch (error) {
       console.error("Error sending admin notification:", error);
       res.status(500).json({ error: "Internal server error" });
@@ -167,22 +169,24 @@ export async function registerRoutes(
       // Fetch all admin users from database
       const admins = await db.select({ email: users.email }).from(users).where(eq(users.role, "admin"));
 
-      if (admins.length === 0) {
-        console.warn("No admin users found in database");
+      const recipients = new Set<string>();
+      admins.forEach(a => { if (a.email) recipients.add(a.email); });
+      if (process.env.ADMIN_EMAIL) recipients.add(process.env.ADMIN_EMAIL);
+
+      if (recipients.size === 0) {
+        console.warn("No admin emails found (DB or env)");
         return res.json({ success: true, message: "No admins to notify" });
       }
 
-      // Send email to each admin
-      for (const admin of admins) {
-        if (admin.email) {
-          await sendOrderStatusEmailToAdmin(admin.email, orderNumber, status, note || "").catch(
-            err => console.error(`Failed to email admin ${admin.email}:`, err)
-          );
-        }
+      // Send email to each unique admin
+      for (const email of recipients) {
+        await sendOrderStatusEmailToAdmin(email, orderNumber, status, note || "").catch(
+          err => console.error(`Failed to email admin ${email}:`, err)
+        );
       }
 
-      console.log(`✅ Admin order status emails sent to ${admins.length} admins`);
-      res.json({ success: true, adminCount: admins.length });
+      console.log(`✅ Admin order status emails sent to ${recipients.size} admins`);
+      res.json({ success: true, adminCount: recipients.size });
     } catch (error) {
       console.error("Error sending admin order status emails:", error);
       res.status(500).json({ error: "Internal server error" });
