@@ -112,41 +112,79 @@ export async function registerRoutes(
     }
   });
 
-  // New Order Notification to Admin
+  // New Order Notification to All Admins
   app.post("/api/notifications/admin/new-order", async (req, res) => {
-    const { email, orderNumber, total, buyerName } = req.body;
-    if (!email || !orderNumber) {
+    const { orderNumber, total, buyerName } = req.body;
+    if (!orderNumber) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
       const { sendNewOrderNotificationToAdmin } = await import("./email");
-      await sendNewOrderNotificationToAdmin(email, orderNumber, parseFloat(total) || 0, buyerName || "Customer");
-      res.json({ success: true });
+      const { db } = await import("./db");
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+
+      // Fetch all admin users from database
+      const admins = await db.select({ email: users.email }).from(users).where(eq(users.role, "admin"));
+
+      if (admins.length === 0) {
+        console.warn("No admin users found in database");
+        return res.json({ success: true, message: "No admins to notify" });
+      }
+
+      // Send email to each admin
+      for (const admin of admins) {
+        if (admin.email) {
+          await sendNewOrderNotificationToAdmin(admin.email, orderNumber, parseFloat(total) || 0, buyerName || "Customer").catch(
+            err => console.error(`Failed to email admin ${admin.email}:`, err)
+          );
+        }
+      }
+
+      console.log(`✅ New order emails sent to ${admins.length} admins`);
+      res.json({ success: true, adminCount: admins.length });
     } catch (error) {
       console.error("Error sending admin notification:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
 
-  // Order Status Email to Admin
-  // Order Status Email to Admin
+  // Order Status Email to All Admins
   app.post("/api/notifications/admin/order-status", async (req, res) => {
     const { orderNumber, status, note } = req.body;
-    // Allow email to be passed, but default to env var
-    const email = req.body.email || process.env.ADMIN_EMAIL;
 
-    if (!email || !orderNumber || !status) {
-      if (!email) console.warn("skipping admin email: ADMIN_EMAIL not set");
-      return res.status(400).json({ error: "Missing required fields (email/ADMIN_EMAIL, orderNumber, status)" });
+    if (!orderNumber || !status) {
+      return res.status(400).json({ error: "Missing required fields (orderNumber, status)" });
     }
 
     try {
       const { sendOrderStatusEmailToAdmin } = await import("./email");
-      await sendOrderStatusEmailToAdmin(email, orderNumber, status, note || "");
-      res.json({ success: true });
+      const { db } = await import("./db");
+      const { users } = await import("@shared/schema");
+      const { eq } = await import("drizzle-orm");
+
+      // Fetch all admin users from database
+      const admins = await db.select({ email: users.email }).from(users).where(eq(users.role, "admin"));
+
+      if (admins.length === 0) {
+        console.warn("No admin users found in database");
+        return res.json({ success: true, message: "No admins to notify" });
+      }
+
+      // Send email to each admin
+      for (const admin of admins) {
+        if (admin.email) {
+          await sendOrderStatusEmailToAdmin(admin.email, orderNumber, status, note || "").catch(
+            err => console.error(`Failed to email admin ${admin.email}:`, err)
+          );
+        }
+      }
+
+      console.log(`✅ Admin order status emails sent to ${admins.length} admins`);
+      res.json({ success: true, adminCount: admins.length });
     } catch (error) {
-      console.error("Error sending admin order status email:", error);
+      console.error("Error sending admin order status emails:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
