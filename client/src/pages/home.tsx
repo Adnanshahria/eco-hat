@@ -368,20 +368,20 @@ export default function Home() {
               <h3 className="font-display text-2xl lg:text-3xl font-bold">{t('landing.ourStory.values.title')}</h3>
             </motion.div>
 
-            <div className="grid grid-cols-3 gap-4 lg:gap-6">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 lg:gap-6">
               {/* Box 1: Authenticity */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.1 }}
-                className="bg-card border border-card-border rounded-xl p-6 lg:p-8 hover:shadow-lg hover:border-primary/30 transition-all group"
+                className="bg-card border border-card-border rounded-xl p-3 sm:p-4 lg:p-6 hover:shadow-lg hover:border-primary/30 transition-all group"
               >
-                <div className="p-4 rounded-xl bg-emerald-100 text-emerald-600 w-fit mb-4 group-hover:scale-110 transition-transform">
-                  <Shield className="h-8 w-8" />
+                <div className="p-2 sm:p-3 lg:p-4 rounded-xl bg-emerald-100 text-emerald-600 w-fit mb-2 sm:mb-4 group-hover:scale-110 transition-transform">
+                  <Shield className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                 </div>
-                <h4 className="font-display text-xl font-bold mb-2">{t('landing.ourStory.values.authenticity')}</h4>
-                <p className="text-muted-foreground">{t('landing.ourStory.values.authenticityDesc')}</p>
+                <h4 className="font-display text-sm sm:text-base lg:text-xl font-bold mb-1 sm:mb-2">{t('landing.ourStory.values.authenticity')}</h4>
+                <p className="text-muted-foreground text-xs sm:text-sm lg:text-base leading-relaxed">{t('landing.ourStory.values.authenticityDesc')}</p>
               </motion.div>
 
               {/* Box 2: Community */}
@@ -390,13 +390,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.2 }}
-                className="bg-card border border-card-border rounded-xl p-6 lg:p-8 hover:shadow-lg hover:border-primary/30 transition-all group"
+                className="bg-card border border-card-border rounded-xl p-3 sm:p-4 lg:p-6 hover:shadow-lg hover:border-primary/30 transition-all group"
               >
-                <div className="p-4 rounded-xl bg-blue-100 text-blue-600 w-fit mb-4 group-hover:scale-110 transition-transform">
-                  <Users className="h-8 w-8" />
+                <div className="p-2 sm:p-3 lg:p-4 rounded-xl bg-blue-100 text-blue-600 w-fit mb-2 sm:mb-4 group-hover:scale-110 transition-transform">
+                  <Users className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                 </div>
-                <h4 className="font-display text-xl font-bold mb-2">{t('landing.ourStory.values.community')}</h4>
-                <p className="text-muted-foreground">{t('landing.ourStory.values.communityDesc')}</p>
+                <h4 className="font-display text-sm sm:text-base lg:text-xl font-bold mb-1 sm:mb-2">{t('landing.ourStory.values.community')}</h4>
+                <p className="text-muted-foreground text-xs sm:text-sm lg:text-base leading-relaxed">{t('landing.ourStory.values.communityDesc')}</p>
               </motion.div>
 
               {/* Box 3: Planet Friendly */}
@@ -405,13 +405,13 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: 0.3 }}
-                className="bg-card border border-card-border rounded-xl p-6 lg:p-8 hover:shadow-lg hover:border-primary/30 transition-all group"
+                className="bg-card border border-card-border rounded-xl p-3 sm:p-4 lg:p-6 hover:shadow-lg hover:border-primary/30 transition-all group"
               >
-                <div className="p-4 rounded-xl bg-green-100 text-green-600 w-fit mb-4 group-hover:scale-110 transition-transform">
-                  <Recycle className="h-8 w-8" />
+                <div className="p-2 sm:p-3 lg:p-4 rounded-xl bg-green-100 text-green-600 w-fit mb-2 sm:mb-4 group-hover:scale-110 transition-transform">
+                  <Recycle className="h-5 w-5 sm:h-6 sm:w-6 lg:h-8 lg:w-8" />
                 </div>
-                <h4 className="font-display text-xl font-bold mb-2">{t('landing.ourStory.values.planet')}</h4>
-                <p className="text-muted-foreground">{t('landing.ourStory.values.planetDesc')}</p>
+                <h4 className="font-display text-sm sm:text-base lg:text-xl font-bold mb-1 sm:mb-2">{t('landing.ourStory.values.planet')}</h4>
+                <p className="text-muted-foreground text-xs sm:text-sm lg:text-base leading-relaxed">{t('landing.ourStory.values.planetDesc')}</p>
               </motion.div>
             </div>
           </div>
