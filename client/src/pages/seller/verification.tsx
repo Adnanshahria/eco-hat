@@ -13,7 +13,10 @@ import {
     Send,
     CheckCircle2,
     Store,
-    Save
+    Save,
+    ImagePlus,
+    Plus,
+    Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +28,7 @@ import { AppLink as Link } from "@/components/app-link";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 const shopTypes = ["Permanent Shop", "Pop-up Store", "Online Only", "Overseas Seller", "Home Business"];
+const MAX_DOCUMENTS = 5;
 
 export default function SellerVerification() {
     const { user } = useAuth();
@@ -32,11 +36,15 @@ export default function SellerVerification() {
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [uploadingDoc, setUploadingDoc] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+    const [logoFile, setLogoFile] = useState<File | null>(null);
+    const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [appealMessage, setAppealMessage] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [savingProfile, setSavingProfile] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const logoInputRef = useRef<HTMLInputElement>(null);
 
     // Shop Details Form State
     const [shopForm, setShopForm] = useState({
@@ -66,18 +74,70 @@ export default function SellerVerification() {
                 shop_location: data.shop_location || "",
                 shop_type: data.shop_type || "Permanent Shop",
             });
+            // Set existing logo preview
+            if (data.avatar_url) {
+                setLogoPreview(data.avatar_url);
+            }
         }
         setLoading(false);
     };
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        const validFiles = files.filter(f => {
+            if (f.size > 5 * 1024 * 1024) {
+                alert(`File "${f.name}" is too large (max 5MB).`);
+                return false;
+            }
+            return true;
+        });
+
+        const totalFiles = selectedFiles.length + validFiles.length;
+        if (totalFiles > MAX_DOCUMENTS) {
+            alert(`Maximum ${MAX_DOCUMENTS} documents allowed.`);
+            return;
+        }
+
+        setSelectedFiles(prev => [...prev, ...validFiles]);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+
+    const removeFile = (index: number) => {
+        setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                alert("File size must be less than 5MB.");
+            if (file.size > 2 * 1024 * 1024) {
+                alert("Logo must be less than 2MB.");
                 return;
             }
-            setSelectedFile(file);
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const uploadLogo = async () => {
+        if (!logoFile || !profile?.id) return null;
+
+        setUploadingLogo(true);
+        try {
+            const fileExt = logoFile.name.split(".").pop();
+            const fileName = `logo_${profile.user_id || profile.id}_${Date.now()}.${fileExt}`;
+
+            await supabase.storage.from("product-images").upload(fileName, logoFile);
+            const { data: urlData } = supabase.storage.from("product-images").getPublicUrl(fileName);
+
+            // Update avatar_url in database
+            await supabase.from("users").update({ avatar_url: urlData.publicUrl }).eq("id", profile.id);
+
+            return urlData.publicUrl;
+        } catch (error) {
+            console.error("Logo upload error:", error);
+            return null;
+        } finally {
+            setUploadingLogo(false);
         }
     };
 
@@ -85,6 +145,11 @@ export default function SellerVerification() {
         if (!profile?.id) return;
         setSavingProfile(true);
         try {
+            // Upload logo if selected
+            if (logoFile) {
+                await uploadLogo();
+            }
+
             const { error } = await supabase.from("users").update({
                 username: shopForm.username,
                 full_name: shopForm.full_name,
@@ -97,6 +162,7 @@ export default function SellerVerification() {
             if (error) throw error;
             alert("Shop details saved successfully!");
             setProfile((prev: any) => ({ ...prev, ...shopForm }));
+            setLogoFile(null);
         } catch (error) {
             console.error(error);
             alert("Failed to save. Please try again.");
@@ -106,7 +172,10 @@ export default function SellerVerification() {
     };
 
     const submitVerification = async () => {
-        if (!profile?.id || !selectedFile) return;
+        if (!profile?.id || selectedFiles.length === 0) {
+            alert("Please upload at least one document.");
+            return;
+        }
 
         // Validate shop details before submitting
         if (!shopForm.username.trim() || !shopForm.full_name.trim() || !shopForm.phone.trim()) {
@@ -116,16 +185,25 @@ export default function SellerVerification() {
 
         setUploadingDoc(true);
         try {
-            const fileExt = selectedFile.name.split(".").pop();
-            const fileName = `${profile.user_id || profile.id}_${Date.now()}.${fileExt}`;
-            await supabase.storage.from("identity-documents").upload(fileName, selectedFile);
-            const { data: urlData } = supabase.storage.from("identity-documents").getPublicUrl(fileName);
-            const documentUrl = urlData?.publicUrl || `document:${fileName}`;
+            // Upload logo first if exists
+            if (logoFile) {
+                await uploadLogo();
+            }
+
+            // Upload all documents
+            const documentUrls: string[] = [];
+            for (const file of selectedFiles) {
+                const fileExt = file.name.split(".").pop();
+                const fileName = `${profile.user_id || profile.id}_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+                await supabase.storage.from("identity-documents").upload(fileName, file);
+                const { data: urlData } = supabase.storage.from("identity-documents").getPublicUrl(fileName);
+                documentUrls.push(urlData?.publicUrl || `document:${fileName}`);
+            }
 
             // Save shop details and verification status together
             const { error } = await supabase.from("users").update({
                 verification_status: "pending",
-                identity_documents: [documentUrl],
+                identity_documents: documentUrls,
                 username: shopForm.username,
                 full_name: shopForm.full_name,
                 bio: shopForm.bio,
@@ -137,8 +215,9 @@ export default function SellerVerification() {
             if (error) throw error;
 
             alert("Verification request submitted! Admins will review your documents.");
-            setSelectedFile(null);
-            setProfile((prev: any) => ({ ...prev, verification_status: "pending", identity_documents: [documentUrl], ...shopForm }));
+            setSelectedFiles([]);
+            setLogoFile(null);
+            setProfile((prev: any) => ({ ...prev, verification_status: "pending", identity_documents: documentUrls, ...shopForm }));
         } catch (error) {
             console.error(error);
             alert("Upload failed. Please try again.");
@@ -412,46 +491,93 @@ export default function SellerVerification() {
                                 <p className="text-sm text-muted-foreground mb-4">{t('verification.submitDocumentsSubtitle')}</p>
                             </div>
 
-                            {!selectedFile ? (
-                                <div
-                                    className="border-2 border-dashed border-input rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer"
-                                    onClick={() => fileInputRef.current?.click()}
-                                >
+                            {/* Shop Logo Upload */}
+                            <div className="mb-6">
+                                <Label className="text-sm font-semibold mb-2 block">Shop Logo (Optional)</Label>
+                                <div className="flex items-center gap-4">
+                                    {logoPreview ? (
+                                        <div className="relative">
+                                            <img src={logoPreview} alt="Logo" className="h-20 w-20 rounded-lg object-cover border" />
+                                            <Button
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute -top-2 -right-2 h-6 w-6"
+                                                onClick={() => { setLogoFile(null); setLogoPreview(profile?.avatar_url || null); }}
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div
+                                            className="h-20 w-20 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:bg-muted/50"
+                                            onClick={() => logoInputRef.current?.click()}
+                                        >
+                                            <ImagePlus className="h-8 w-8 text-muted-foreground" />
+                                        </div>
+                                    )}
                                     <input
                                         type="file"
-                                        ref={fileInputRef}
+                                        ref={logoInputRef}
                                         className="hidden"
-                                        accept=".jpg,.jpeg,.png,.pdf"
-                                        onChange={handleFileSelect}
+                                        accept=".jpg,.jpeg,.png,.webp"
+                                        onChange={handleLogoSelect}
                                     />
-
-                                    <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Upload className="h-6 w-6 text-primary" />
+                                    <div className="text-sm text-muted-foreground">
+                                        <p>Your shop logo will be displayed publicly.</p>
+                                        <p className="text-xs">Max 2MB • PNG, JPG, WebP</p>
                                     </div>
-
-                                    <p className="font-medium text-foreground mb-1">{t('verification.uploadNID')}</p>
-                                    <p className="text-sm text-muted-foreground mb-4">{t('verification.dragDrop')}</p>
-
-                                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
-                                        {t('verification.chooseFile')}
-                                    </Button>
-
-                                    <p className="text-xs text-muted-foreground mt-4">{t('verification.supportedFormats')}</p>
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 bg-white p-4 rounded-lg border">
-                                        <FileText className="h-6 w-6 text-primary" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-medium truncate">{selectedFile.name}</p>
-                                            <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(1)} KB</p>
-                                        </div>
-                                        <Button variant="ghost" size="icon" onClick={() => setSelectedFile(null)}>
-                                            <X className="h-4 w-4" />
+                            </div>
+
+                            {/* Document Upload */}
+                            <div className="space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-sm font-semibold">Identity Documents ({selectedFiles.length}/{MAX_DOCUMENTS})</Label>
+                                    {selectedFiles.length < MAX_DOCUMENTS && (
+                                        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                                            <Plus className="h-4 w-4 mr-1" /> Add Document
                                         </Button>
-                                    </div>
+                                    )}
                                 </div>
-                            )}
+
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept=".jpg,.jpeg,.png,.pdf"
+                                    multiple
+                                    onChange={handleFileSelect}
+                                />
+
+                                {selectedFiles.length === 0 ? (
+                                    <div
+                                        className="border-2 border-dashed border-input rounded-xl p-8 text-center hover:bg-muted/50 transition-colors cursor-pointer"
+                                        onClick={() => fileInputRef.current?.click()}
+                                    >
+                                        <div className="h-12 w-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                                            <Upload className="h-6 w-6 text-primary" />
+                                        </div>
+                                        <p className="font-medium text-foreground mb-1">{t('verification.uploadNID')}</p>
+                                        <p className="text-sm text-muted-foreground mb-4">{t('verification.dragDrop')}</p>
+                                        <p className="text-xs text-muted-foreground">JPG, PNG, PDF • Max 5MB each • Up to 5 files</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {selectedFiles.map((file, index) => (
+                                            <div key={index} className="flex items-center gap-3 bg-muted/30 p-3 rounded-lg border">
+                                                <FileText className="h-5 w-5 text-primary flex-shrink-0" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-medium text-sm truncate">{file.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(1)} KB</p>
+                                                </div>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFile(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
 
 
                             {/* Appeal Message for rejected users */}
@@ -470,10 +596,10 @@ export default function SellerVerification() {
                             <Button
                                 className="w-full gap-2 h-12 text-base"
                                 onClick={submitVerification}
-                                disabled={uploadingDoc || !selectedFile}
+                                disabled={uploadingDoc || selectedFiles.length === 0}
                             >
                                 {uploadingDoc ? (
-                                    <><Loader2 className="h-5 w-5 animate-spin" /> Uploading...</>
+                                    <><Loader2 className="h-5 w-5 animate-spin" /> Uploading {selectedFiles.length} file(s)...</>
                                 ) : (
                                     <><Send className="h-5 w-5" /> Submit for Verification</>
                                 )}

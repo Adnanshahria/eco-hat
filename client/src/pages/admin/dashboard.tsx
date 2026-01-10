@@ -11,6 +11,7 @@ import { AppLink as Link } from "@/components/app-link";
 
 // Send Notification Section Component
 function SendNotificationSection({ users }: { users: User[] }) {
+    const [mode, setMode] = useState<"single" | "batch">("single");
     const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
     const [roleFilter, setRoleFilter] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
@@ -28,31 +29,55 @@ function SendNotificationSection({ users }: { users: User[] }) {
     });
 
     const selectedUser = users.find(u => u.id === selectedUserId);
+    const batchTargets = roleFilter === "all" ? users : users.filter(u => u.role === roleFilter);
 
     const handleSend = async () => {
-        if (!selectedUserId || !title.trim() || !message.trim()) {
-            setResult({ ok: false, text: "Please select a user and fill in title & message" });
+        if (!title.trim() || !message.trim()) {
+            setResult({ ok: false, text: "Please fill in title & message" });
             return;
         }
+
+        if (mode === "single" && !selectedUserId) {
+            setResult({ ok: false, text: "Please select a user" });
+            return;
+        }
+
         setSending(true);
         setResult(null);
+
         try {
-            // Send in-app notification
-            await createNotification(selectedUserId, title, message, notifType);
+            if (mode === "single") {
+                // Single user notification
+                await createNotification(selectedUserId!, title, message, notifType);
 
-            // Also send email notification
-            fetch("/api/notifications/admin/send", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: selectedUser?.email,
-                    title,
-                    message,
-                    type: notifType
-                })
-            }).catch(err => console.warn("Email send failed (SMTP may not be configured):", err));
+                fetch("/api/notifications/admin/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: selectedUser?.email, title, message, type: notifType })
+                }).catch(err => console.warn("Email failed:", err));
 
-            setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
+                setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
+            } else {
+                // Batch notification to all filtered users
+                let successCount = 0;
+                for (const user of batchTargets) {
+                    try {
+                        await createNotification(user.id, title, message, notifType);
+
+                        fetch("/api/notifications/admin/send", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email: user.email, title, message, type: notifType })
+                        }).catch(() => { });
+
+                        successCount++;
+                    } catch {
+                        console.warn(`Failed for ${user.email}`);
+                    }
+                }
+                setResult({ ok: true, text: `✅ Notification sent to ${successCount} users!` });
+            }
+
             setTitle("");
             setMessage("");
             setSelectedUserId(null);
@@ -65,13 +90,36 @@ function SendNotificationSection({ users }: { users: User[] }) {
 
     return (
         <div className="bg-card rounded-xl border p-6 mb-8">
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Bell className="h-5 w-5 text-primary" /> Send Notification
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" /> Send Notification
+                </h3>
+                <div className="flex gap-1 bg-muted rounded-lg p-1">
+                    <button
+                        onClick={() => setMode("single")}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition ${mode === "single" ? "bg-background shadow" : ""}`}
+                    >
+                        Single User
+                    </button>
+                    <button
+                        onClick={() => setMode("batch")}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition ${mode === "batch" ? "bg-background shadow" : ""}`}
+                    >
+                        Batch Send
+                    </button>
+                </div>
+            </div>
 
             <div className="grid md:grid-cols-2 gap-6">
                 {/* User Selection */}
                 <div className="space-y-4">
+                    {mode === "batch" && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                            <strong>Batch Mode:</strong> Send to {batchTargets.length} user{batchTargets.length !== 1 ? "s" : ""}
+                            {roleFilter !== "all" ? ` (role: ${roleFilter})` : " (all roles)"}
+                        </div>
+                    )}
+
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -80,6 +128,7 @@ function SendNotificationSection({ users }: { users: User[] }) {
                                 value={searchQuery}
                                 onChange={e => setSearchQuery(e.target.value)}
                                 className="pl-9"
+                                disabled={mode === "batch"}
                             />
                         </div>
                         <select
@@ -95,34 +144,38 @@ function SendNotificationSection({ users }: { users: User[] }) {
                         </select>
                     </div>
 
-                    <div className="border rounded-lg max-h-48 overflow-auto">
-                        {filteredUsers.length === 0 ? (
-                            <div className="p-4 text-center text-muted-foreground text-sm">No users found</div>
-                        ) : filteredUsers.slice(0, 20).map(u => (
-                            <div
-                                key={u.id}
-                                onClick={() => setSelectedUserId(u.id)}
-                                className={`p-3 border-b last:border-b-0 cursor-pointer flex items-center justify-between transition ${selectedUserId === u.id ? "bg-primary/10" : "hover:bg-muted/50"}`}
-                            >
-                                <div>
-                                    <p className="font-medium text-sm">{u.username}</p>
-                                    <p className="text-xs text-muted-foreground">{u.email}</p>
-                                </div>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
-                                    u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
-                                        u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
-                                            'bg-gray-100 text-gray-700'
-                                    }`}>
-                                    {u.role}
-                                </span>
+                    {mode === "single" && (
+                        <>
+                            <div className="border rounded-lg max-h-48 overflow-auto">
+                                {filteredUsers.length === 0 ? (
+                                    <div className="p-4 text-center text-muted-foreground text-sm">No users found</div>
+                                ) : filteredUsers.slice(0, 20).map(u => (
+                                    <div
+                                        key={u.id}
+                                        onClick={() => setSelectedUserId(u.id)}
+                                        className={`p-3 border-b last:border-b-0 cursor-pointer flex items-center justify-between transition ${selectedUserId === u.id ? "bg-primary/10" : "hover:bg-muted/50"}`}
+                                    >
+                                        <div>
+                                            <p className="font-medium text-sm">{u.username}</p>
+                                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                                        </div>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                                            u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
+                                                u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                            }`}>
+                                            {u.role}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                    {selectedUser && (
-                        <div className="bg-primary/10 rounded-lg p-3 text-sm">
-                            <span className="text-muted-foreground">Sending to: </span>
-                            <span className="font-medium text-primary">{selectedUser.username}</span>
-                        </div>
+                            {selectedUser && (
+                                <div className="bg-primary/10 rounded-lg p-3 text-sm">
+                                    <span className="text-muted-foreground">Sending to: </span>
+                                    <span className="font-medium text-primary">{selectedUser.username}</span>
+                                </div>
+                            )}
+                        </>
                     )}
                 </div>
 
@@ -174,11 +227,11 @@ function SendNotificationSection({ users }: { users: User[] }) {
 
                     <Button
                         onClick={handleSend}
-                        disabled={sending || !selectedUserId || !title || !message}
+                        disabled={sending || !title || !message || (mode === "single" && !selectedUserId)}
                         className="w-full gap-2"
                     >
                         {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                        {sending ? "Sending..." : "Send Notification"}
+                        {sending ? "Sending..." : mode === "batch" ? `Send to ${batchTargets.length} Users` : "Send Notification"}
                     </Button>
                 </div>
             </div>
