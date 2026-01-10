@@ -147,6 +147,15 @@ export default function Checkout() {
 
             await supabase.from("order_items").insert(orderItems);
 
+            // Decrement stock for each purchased product
+            for (const item of items) {
+                const newStock = Math.max(0, item.product.stock - item.quantity);
+                await supabase
+                    .from("products")
+                    .update({ stock: newStock })
+                    .eq("id", item.product_id);
+            }
+
             // Notify each unique seller about their new order (in-app + email)
             const uniqueSellerIds = Array.from(new Set(orderItems.map(item => item.seller_id).filter(Boolean))) as number[];
             for (const sellerId of uniqueSellerIds) {

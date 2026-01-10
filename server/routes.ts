@@ -130,10 +130,15 @@ export async function registerRoutes(
   });
 
   // Order Status Email to Admin
+  // Order Status Email to Admin
   app.post("/api/notifications/admin/order-status", async (req, res) => {
-    const { email, orderNumber, status, note } = req.body;
+    const { orderNumber, status, note } = req.body;
+    // Allow email to be passed, but default to env var
+    const email = req.body.email || process.env.ADMIN_EMAIL;
+
     if (!email || !orderNumber || !status) {
-      return res.status(400).json({ error: "Missing required fields" });
+      if (!email) console.warn("skipping admin email: ADMIN_EMAIL not set");
+      return res.status(400).json({ error: "Missing required fields (email/ADMIN_EMAIL, orderNumber, status)" });
     }
 
     try {

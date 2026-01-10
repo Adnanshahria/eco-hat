@@ -320,6 +320,17 @@ export default function SellerDashboard() {
                     }).catch(err => console.error("Failed to send buyer email:", err));
                 }
             }
+
+            // Notify Admin
+            fetch("/api/notifications/admin/order-status", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    orderNumber: orderData.order_number || orderId,
+                    status: newStatus,
+                    note
+                }),
+            }).catch(err => console.error("Failed to send admin email:", err));
         }
     };
 
@@ -352,6 +363,18 @@ export default function SellerDashboard() {
         await updateOrderTracking(orderId, "shipped", "Your order has been shipped and is on the way!");
     };
 
+    const updateToAtStation = async (itemId: number, orderId: number) => {
+        await supabase.from("order_items").update({ item_status: "at_station" }).eq("id", itemId);
+        setOrders(orders.map(o => o.id === itemId ? { ...o, item_status: "at_station" } : o));
+        await updateOrderTracking(orderId, "at_station", "Your order has arrived at the local delivery station.");
+    };
+
+    const updateToReachedDestination = async (itemId: number, orderId: number) => {
+        await supabase.from("order_items").update({ item_status: "reached_destination" }).eq("id", itemId);
+        setOrders(orders.map(o => o.id === itemId ? { ...o, item_status: "reached_destination" } : o));
+        await updateOrderTracking(orderId, "reached_destination", "Your order is ready for delivery! Please confirm receipt when you receive it.");
+    };
+
     const submitAppeal = async () => {
         if (!appealText.trim() || !sellerId) return;
         setSubmittingAppeal(true);
@@ -368,7 +391,7 @@ export default function SellerDashboard() {
     };
 
     const pendingOrders = orders.filter(o => o.item_status === "pending" || !o.item_status);
-    const activeOrders = orders.filter(o => o.item_status === "confirmed" || o.item_status === "processing");
+    const activeOrders = orders.filter(o => ["confirmed", "processing", "shipped", "at_station"].includes(o.item_status || ""));
 
     // Terminated View
     if (isTerminated) {
@@ -699,12 +722,18 @@ export default function SellerDashboard() {
                                                             <td className="p-3 font-mono">#{o.order?.order_number || o.order?.id}</td>
                                                             <td className="p-3">{o.product?.name} × {o.quantity}</td>
                                                             <td className="p-3"><span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 font-medium">{t(`status.${o.item_status || 'processing'}`)}</span></td>
-                                                            <td className="p-3 flex gap-2">
+                                                            <td className="p-3 flex gap-2 flex-wrap">
                                                                 {o.item_status === "confirmed" && (
                                                                     <Button size="sm" variant="outline" className="h-8" onClick={() => markProcessing(o.id, o.order?.id)}>📦 {t('sellerDashboard.ordersTab.processing')}</Button>
                                                                 )}
                                                                 {(o.item_status === "confirmed" || o.item_status === "processing") && (
                                                                     <Button size="sm" variant="default" className="h-8" onClick={() => updateToShipped(o.id, o.order?.id)}>🚚 {t('sellerDashboard.ordersTab.markShipped')}</Button>
+                                                                )}
+                                                                {o.item_status === "shipped" && (
+                                                                    <Button size="sm" variant="default" className="h-8 bg-cyan-600 hover:bg-cyan-700" onClick={() => updateToAtStation(o.id, o.order?.id)}>📍 At Station</Button>
+                                                                )}
+                                                                {o.item_status === "at_station" && (
+                                                                    <Button size="sm" variant="default" className="h-8 bg-teal-600 hover:bg-teal-700" onClick={() => updateToReachedDestination(o.id, o.order?.id)}>🎯 Ready for Delivery</Button>
                                                                 )}
                                                             </td>
                                                         </tr>
