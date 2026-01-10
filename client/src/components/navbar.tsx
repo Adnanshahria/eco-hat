@@ -168,45 +168,19 @@ export function NavBar({ onSearch }: NavBarProps) {
                     animate={{ opacity: 1, y: 0 }}
                     className="lg:hidden border-t border-border bg-background p-4"
                 >
-                    <div className="flex flex-col gap-0">
-                        {/* Search */}
+                    <div className="flex flex-col gap-3">
                         <Input
                             type="search"
                             placeholder={t('nav.search')}
-                            className="bg-muted/50 touch-target"
+                            className="bg-muted/50 touch-target border border-border rounded-lg"
                         />
 
-                        {/* Decorative Divider */}
-                        <div className="flex items-center gap-3 my-1">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                            <Leaf className="h-3 w-3 text-primary/40" />
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                        </div>
-
                         {/* Navigation Links */}
-                        <Link href="/shop" className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('nav.products')}</Link>
+                        <Link href="/shop" className="py-3 px-4 font-medium touch-manipulation touch-target flex items-center rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">{t('nav.products')}</Link>
 
-                        <div className="flex items-center gap-3 my-1">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                            <Leaf className="h-3 w-3 text-primary/40" />
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                        </div>
+                        <Link href="/track-order" className="py-3 px-4 font-medium touch-manipulation touch-target flex items-center rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">{t('orders.trackOrder')}</Link>
 
-                        <Link href="/track-order" className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('orders.trackOrder')}</Link>
-
-                        <div className="flex items-center gap-3 my-1">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                            <Leaf className="h-3 w-3 text-primary/40" />
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                        </div>
-
-                        <a href={`${import.meta.env.BASE_URL}#our-story`} className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('landing.whyChooseUs')}</a>
-
-                        <div className="flex items-center gap-3 my-2">
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                            <Leaf className="h-4 w-4 text-primary/60" />
-                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-                        </div>
+                        <a href={`${import.meta.env.BASE_URL}#our-story`} className="py-3 px-4 font-medium touch-manipulation touch-target flex items-center rounded-lg border border-border hover:border-primary/30 hover:bg-primary/5 transition-all">{t('landing.whyChooseUs')}</a>
 
                         {/* Auth Section */}
                         {user ? (

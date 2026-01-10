@@ -368,7 +368,7 @@ export default function Home() {
               <h3 className="font-display text-2xl lg:text-3xl font-bold">{t('landing.ourStory.values.title')}</h3>
             </motion.div>
 
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-3 gap-4 lg:gap-6">
               {/* Box 1: Authenticity */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
