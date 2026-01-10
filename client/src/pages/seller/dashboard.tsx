@@ -105,6 +105,7 @@ export default function SellerDashboard() {
     });
     const [loading, setLoading] = useState(true);
     const [denyModal, setDenyModal] = useState<{ itemId: number; reason: string } | null>(null);
+    const [trackingModal, setTrackingModal] = useState<{ orderNumber: string; trackingHistory: Array<{ status: string; timestamp: string; note: string }> } | null>(null);
     const [productFilter, setProductFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
 
     // Profile & Account State
@@ -388,6 +389,15 @@ export default function SellerDashboard() {
         if (!confirm("Delete this product?")) return;
         await supabase.from("products").delete().eq("id", productId);
         setProducts(products.filter(p => p.id !== productId));
+    };
+
+    const showTracking = async (orderId: number, orderNumber: string) => {
+        const { data } = await supabase.from("orders").select("tracking_history").eq("id", orderId).single();
+        if (data?.tracking_history) {
+            setTrackingModal({ orderNumber, trackingHistory: data.tracking_history });
+        } else {
+            setTrackingModal({ orderNumber, trackingHistory: [] });
+        }
     };
 
     const pendingOrders = orders.filter(o => o.item_status === "pending" || !o.item_status);
@@ -735,6 +745,7 @@ export default function SellerDashboard() {
                                                                 {o.item_status === "at_station" && (
                                                                     <Button size="sm" variant="default" className="h-8 bg-teal-600 hover:bg-teal-700" onClick={() => updateToReachedDestination(o.id, o.order?.id)}>🎯 Ready for Delivery</Button>
                                                                 )}
+                                                                <Button size="sm" variant="ghost" className="h-8 text-muted-foreground" onClick={() => showTracking(o.order?.id, o.order?.order_number || String(o.order?.id))}>📋 View Tracking</Button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -882,6 +893,40 @@ export default function SellerDashboard() {
                     </div>
                 )
             }
+
+            {/* Tracking History Modal */}
+            {trackingModal && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-card rounded-xl p-6 w-full max-w-md shadow-2xl animate-in zoom-in-95 max-h-[80vh] overflow-auto">
+                        <h3 className="font-semibold mb-4 flex items-center gap-2">
+                            <Truck className="h-5 w-5 text-primary" /> Tracking History
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-4">Order #{trackingModal.orderNumber}</p>
+
+                        {trackingModal.trackingHistory.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-8">No tracking history available.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {trackingModal.trackingHistory.map((track, i) => (
+                                    <div key={i} className="flex gap-3">
+                                        <div className="flex flex-col items-center">
+                                            <div className={`h-3 w-3 rounded-full ${i === trackingModal.trackingHistory.length - 1 ? "bg-primary ring-4 ring-primary/20" : "bg-muted-foreground/30"}`} />
+                                            {i < trackingModal.trackingHistory.length - 1 && <div className="w-0.5 flex-1 bg-muted-foreground/20 mt-1" />}
+                                        </div>
+                                        <div className="flex-1 pb-4">
+                                            <p className="font-medium capitalize text-sm">{track.status.replace(/_/g, " ")}</p>
+                                            {track.note && <p className="text-xs text-muted-foreground mt-1">{track.note}</p>}
+                                            <p className="text-xs text-muted-foreground mt-1">{new Date(track.timestamp).toLocaleString()}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <Button variant="outline" onClick={() => setTrackingModal(null)} className="w-full mt-4">Close</Button>
+                    </div>
+                </div>
+            )}
 
             {/* Mobile Bottom Navigation */}
             <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
