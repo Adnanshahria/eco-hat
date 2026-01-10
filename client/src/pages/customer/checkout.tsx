@@ -147,7 +147,7 @@ export default function Checkout() {
 
             await supabase.from("order_items").insert(orderItems);
 
-            // Notify each unique seller about their new order
+            // Notify each unique seller about their new order (in-app + email)
             const uniqueSellerIds = Array.from(new Set(orderItems.map(item => item.seller_id).filter(Boolean))) as number[];
             for (const sellerId of uniqueSellerIds) {
                 await createNotification(
@@ -156,12 +156,29 @@ export default function Checkout() {
                     `Order #${orderNumber} needs your approval. Check your seller dashboard.`,
                     "info"
                 );
+
+                // Send email to seller
+                const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+                if (sellerData?.email) {
+                    const sellerItem = items.find(i => i.product.seller_id === sellerId);
+                    fetch("/api/notifications/seller/new-order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            email: sellerData.email,
+                            orderNumber,
+                            productName: sellerItem?.product.name || "Product",
+                            quantity: sellerItem?.quantity || 1,
+                            earning: sellerItem ? sellerItem.product.price * sellerItem.quantity : 0
+                        }),
+                    }).catch(err => console.error("Failed to send seller email:", err));
+                }
             }
 
-            // Notify all admins for oversight
+            // Notify all admins for oversight (in-app + email)
             const { data: admins } = await supabase
                 .from("users")
-                .select("id")
+                .select("id, email")
                 .eq("role", "admin");
             if (admins) {
                 for (const admin of admins) {
@@ -171,10 +188,36 @@ export default function Checkout() {
                         `Order #${orderNumber} (৳${grandTotal}) placed and awaiting seller approval.`,
                         "info"
                     );
+
+                    // Send email to admin
+                    if (admin.email) {
+                        fetch("/api/notifications/admin/new-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                email: admin.email,
+                                orderNumber,
+                                total: grandTotal,
+                                buyerName: form.fullName
+                            }),
+                        }).catch(err => console.error("Failed to send admin email:", err));
+                    }
                 }
             }
 
             await clearCart();
+
+            // Send order confirmation email to buyer
+            fetch("/api/notifications/order-confirmation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: profile.email,
+                    orderId: order.id,
+                    total: grandTotal
+                }),
+            }).catch(err => console.error("Failed to send order confirmation email:", err));
+
             setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err: any) {
             console.error("Checkout error:", err);

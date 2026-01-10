@@ -195,9 +195,9 @@ export default function AdminDashboard() {
         await supabase.from("order_items").update({ item_status: newStatus }).eq("id", itemId);
         setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, item_status: newStatus } : i));
 
-        // Update tracking history and notify buyer
+        // Update tracking history and notify buyer (in-app + email)
         if (orderId) {
-            const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id").eq("id", orderId).single();
+            const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id, order_number").eq("id", orderId).single();
             if (orderData) {
                 const history = orderData.tracking_history || [];
                 const statusMessages: Record<string, string> = {
@@ -210,7 +210,7 @@ export default function AdminDashboard() {
                 history.push({ status: newStatus, timestamp: new Date().toISOString(), note });
                 await supabase.from("orders").update({ tracking_history: history, status: newStatus }).eq("id", orderId);
 
-                // Notify buyer
+                // Notify buyer (in-app)
                 if (orderData.buyer_id) {
                     await createNotification(
                         orderData.buyer_id,
@@ -218,6 +218,22 @@ export default function AdminDashboard() {
                         note,
                         "info"
                     );
+
+                    // Send email to buyer
+                    const { data: buyerData } = await supabase.from("users").select("email").eq("id", orderData.buyer_id).single();
+                    if (buyerData?.email) {
+                        fetch("/api/notifications/order-status", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                email: buyerData.email,
+                                orderId,
+                                orderNumber: orderData.order_number || orderId,
+                                status: newStatus,
+                                note
+                            }),
+                        }).catch(err => console.error("Failed to send buyer email:", err));
+                    }
                 }
             }
         }

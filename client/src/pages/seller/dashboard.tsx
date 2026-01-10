@@ -187,17 +187,17 @@ export default function SellerDashboard() {
 
         if (ordersData) {
             setOrders(ordersData as unknown as OrderItem[]);
-            const pending = ordersData.filter((o: OrderItem) => o.item_status === "pending" || !o.item_status);
-            const confirmed = ordersData.filter((o: OrderItem) => o.item_status === "confirmed");
-            const delivered = ordersData.filter((o: OrderItem) => o.item_status === "delivered" || (o as any).order?.status === "delivered");
-            totalEarnings = delivered.reduce((sum: number, o: OrderItem) => sum + (o.seller_earning || (o.price_at_purchase || 0) * o.quantity), 0);
-            pendingEarnings = confirmed.reduce((sum: number, o: OrderItem) => sum + (o.seller_earning || o.price_at_purchase * o.quantity), 0);
+            const pending = ordersData.filter((o: any) => o.item_status === "pending" || !o.item_status);
+            const confirmed = ordersData.filter((o: any) => o.item_status === "confirmed");
+            const delivered = ordersData.filter((o: any) => o.item_status === "delivered" || o.order?.status === "delivered");
+            totalEarnings = delivered.reduce((sum: number, o: any) => sum + (o.seller_earning || (o.price_at_purchase || 0) * o.quantity), 0);
+            pendingEarnings = confirmed.reduce((sum: number, o: any) => sum + (o.seller_earning || o.price_at_purchase * o.quantity), 0);
             pendingOrdersCount = pending.length;
             confirmedOrdersCount = confirmed.length;
         }
 
         // Count delivered orders
-        const deliveredOrdersCount = ordersData?.filter((o: OrderItem) => o.item_status === "delivered" || (o as any).order?.status === "delivered").length || 0;
+        const deliveredOrdersCount = ordersData?.filter((o: any) => o.item_status === "delivered" || o.order?.status === "delivered").length || 0;
 
         // Product Stats - calculated from productsData (ALWAYS runs)
         const pStats = {
@@ -288,16 +288,16 @@ export default function SellerDashboard() {
         }
     };
 
-    // Helper: Update tracking history and notify buyer
+    // Helper: Update tracking history and notify buyer (in-app + email)
     const updateOrderTracking = async (orderId: number, newStatus: string, note: string, buyerId?: number) => {
         // Get current order to update tracking history
-        const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id").eq("id", orderId).single();
+        const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id, order_number").eq("id", orderId).single();
         if (orderData) {
             const history = orderData.tracking_history || [];
             history.push({ status: newStatus, timestamp: new Date().toISOString(), note });
             await supabase.from("orders").update({ tracking_history: history, status: newStatus }).eq("id", orderId);
 
-            // Notify buyer
+            // Notify buyer (in-app)
             const bId = buyerId || orderData.buyer_id;
             if (bId) {
                 await createNotification(
@@ -306,6 +306,22 @@ export default function SellerDashboard() {
                     note,
                     "info"
                 );
+
+                // Send email to buyer
+                const { data: buyerData } = await supabase.from("users").select("email").eq("id", bId).single();
+                if (buyerData?.email) {
+                    fetch("/api/notifications/order-status", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            email: buyerData.email,
+                            orderId,
+                            orderNumber: orderData.order_number || orderId,
+                            status: newStatus,
+                            note
+                        }),
+                    }).catch(err => console.error("Failed to send buyer email:", err));
+                }
             }
         }
     };
