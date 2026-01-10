@@ -64,16 +64,25 @@ export async function registerRoutes(
   // Order Status Change Email (Buyer)
   app.post("/api/notifications/order-status", async (req, res) => {
     const { email, orderId, orderNumber, status, note } = req.body;
+    console.log(`📧 [Buyer Notification] Request for Order #${orderNumber}, Status: ${status}, Email: ${email}`);
+
     if (!email || !orderId || !status) {
+      console.error(`❌ [Buyer Notification] Missing fields:`, { email, orderId, status });
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
       const { sendOrderStatusEmail } = await import("./email");
-      await sendOrderStatusEmail(email, parseInt(orderId), orderNumber || `${orderId}`, status, note || "");
-      res.json({ success: true });
+      const success = await sendOrderStatusEmail(email, parseInt(orderId), orderNumber || `${orderId}`, status, note || "");
+      if (success) {
+        console.log(`✅ [Buyer Notification] Email sent successfully to ${email}`);
+        res.json({ success: true });
+      } else {
+        console.error(`❌ [Buyer Notification] Failed to send email to ${email}`);
+        res.status(500).json({ error: "Failed to send email" });
+      }
     } catch (error) {
-      console.error("Error sending order status email:", error);
+      console.error("❌ [Buyer Notification] Error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -81,6 +90,8 @@ export async function registerRoutes(
   // New Order Notification to Seller (Pending Approval)
   app.post("/api/notifications/seller/new-order", async (req, res) => {
     const { email, orderNumber, productName, quantity, earning } = req.body;
+    console.log(`📧 [Seller Notification] New Order #${orderNumber}, Email: ${email}`);
+
     if (!email || !orderNumber) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -98,16 +109,25 @@ export async function registerRoutes(
   // Order Status Email to Seller
   app.post("/api/notifications/seller/order-status", async (req, res) => {
     const { email, orderNumber, status, buyerName } = req.body;
+    console.log(`📧 [Seller Notification] Order #${orderNumber} Update, Status: ${status}, Email: ${email}`);
+
     if (!email || !orderNumber || !status) {
+      console.error(`❌ [Seller Notification] Missing fields:`, { email, orderNumber, status });
       return res.status(400).json({ error: "Missing required fields" });
     }
 
     try {
       const { sendOrderStatusEmailToSeller } = await import("./email");
-      await sendOrderStatusEmailToSeller(email, orderNumber, status, buyerName || "Customer");
-      res.json({ success: true });
+      const success = await sendOrderStatusEmailToSeller(email, orderNumber, status, buyerName || "Customer");
+      if (success) {
+        console.log(`✅ [Seller Notification] Email sent successfully to ${email}`);
+        res.json({ success: true });
+      } else {
+        console.error(`❌ [Seller Notification] Failed to send email to ${email}`);
+        res.status(500).json({ error: "Failed to send email" });
+      }
     } catch (error) {
-      console.error("Error sending seller order status email:", error);
+      console.error("❌ [Seller Notification] Error:", error);
       res.status(500).json({ error: "Internal server error" });
     }
   });
@@ -115,6 +135,8 @@ export async function registerRoutes(
   // New Order Notification to All Admins
   app.post("/api/notifications/admin/new-order", async (req, res) => {
     const { orderNumber, total, buyerName } = req.body;
+    console.log(`📧 [Admin Notification] New Order #${orderNumber}`);
+
     if (!orderNumber) {
       return res.status(400).json({ error: "Missing required fields" });
     }
@@ -132,13 +154,16 @@ export async function registerRoutes(
       admins.forEach(a => { if (a.email) recipients.add(a.email); });
       if (process.env.ADMIN_EMAIL) recipients.add(process.env.ADMIN_EMAIL);
 
+      console.log(`📧 [Admin Notification] Found ${recipients.size} unique recipients (DB + Env)`);
+
       if (recipients.size === 0) {
-        console.warn("No admin emails found (DB or env)");
+        console.warn("⚠️ No admin emails found (DB or env)");
         return res.json({ success: true, message: "No admins to notify" });
       }
 
       // Send email to each unique admin
-      for (const email of recipients) {
+      for (const email of Array.from(recipients)) {
+        console.log(`📧 Sending to admin: ${email}`);
         await sendNewOrderNotificationToAdmin(email, orderNumber, parseFloat(total) || 0, buyerName || "Customer").catch(
           err => console.error(`Failed to email admin ${email}:`, err)
         );
@@ -155,6 +180,7 @@ export async function registerRoutes(
   // Order Status Email to All Admins
   app.post("/api/notifications/admin/order-status", async (req, res) => {
     const { orderNumber, status, note } = req.body;
+    console.log(`📧 [Admin Notification] Order #${orderNumber} Update, Status: ${status}`);
 
     if (!orderNumber || !status) {
       return res.status(400).json({ error: "Missing required fields (orderNumber, status)" });
@@ -173,13 +199,16 @@ export async function registerRoutes(
       admins.forEach(a => { if (a.email) recipients.add(a.email); });
       if (process.env.ADMIN_EMAIL) recipients.add(process.env.ADMIN_EMAIL);
 
+      console.log(`📧 [Admin Notification] Found ${recipients.size} unique recipients (DB + Env)`);
+
       if (recipients.size === 0) {
-        console.warn("No admin emails found (DB or env)");
+        console.warn("⚠️ No admin emails found (DB or env)");
         return res.json({ success: true, message: "No admins to notify" });
       }
 
       // Send email to each unique admin
-      for (const email of recipients) {
+      for (const email of Array.from(recipients)) {
+        console.log(`📧 Sending to admin: ${email}`);
         await sendOrderStatusEmailToAdmin(email, orderNumber, status, note || "").catch(
           err => console.error(`Failed to email admin ${email}:`, err)
         );
