@@ -159,7 +159,7 @@ export default function ProductDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="flex items-center justify-center h-[60vh]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -170,7 +170,7 @@ export default function ProductDetail() {
 
     if (!product) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="max-w-4xl mx-auto px-4 py-20 text-center">
                     <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -189,7 +189,7 @@ export default function ProductDetail() {
     const displayImage = product.image_url || product.images?.[0];
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+        <div className="min-h-screen bg-grass-pattern">
             <NavBar />
 
             <main className="max-w-6xl mx-auto px-4 py-4">

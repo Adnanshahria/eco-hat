@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { CartProvider } from "@/lib/cart-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdminRoute } from "@/components/admin-route";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 // Pages
 import NotFound from "@/pages/not-found";
@@ -28,6 +29,7 @@ import Profile from "@/pages/customer/profile";
 import SellerDashboard from "@/pages/seller/dashboard";
 import AddProduct from "@/pages/seller/add-product";
 import EditProduct from "@/pages/seller/edit-product";
+import SellerVerification from "@/pages/seller/verification";
 
 
 // Admin Pages
@@ -67,6 +69,7 @@ function Router() {
       <Route path="/seller/account" component={SellerDashboard} />
       <Route path="/seller/add-product" component={AddProduct} />
       <Route path="/seller/edit-product/:id" component={EditProduct} />
+      <Route path="/seller/verification" component={SellerVerification} />
 
 
       {/* Admin Routes */}
@@ -129,16 +132,18 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <CartProvider>
-          <TooltipProvider>
-            <Toaster />
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-              <Router />
-            </WouterRouter>
-          </TooltipProvider>
-        </CartProvider>
-      </AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
+          <CartProvider>
+            <TooltipProvider>
+              <Toaster />
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
+                <Router />
+              </WouterRouter>
+            </TooltipProvider>
+          </CartProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }

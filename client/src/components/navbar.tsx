@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/components/auth-provider";
 import { NotificationCenter } from "./notifications";
 import { useCart } from "@/lib/cart-context";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -27,6 +29,7 @@ export function NavBar({ onSearch }: NavBarProps) {
     const [searchQuery, setSearchQuery] = useState("");
     const { user, userRole, signOut } = useAuth();
     const { items } = useCart();
+    const { t } = useLanguage();
     const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -36,97 +39,126 @@ export function NavBar({ onSearch }: NavBarProps) {
     };
 
     return (
-        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16 lg:h-20">
-                    <Link href="/" className="flex items-center gap-3">
-                        <img src={import.meta.env.BASE_URL + "logo-en.png"} alt="EcoHaat" className="h-14 lg:h-16 w-auto" />
-                    </Link>
-
-                    <nav className="hidden lg:flex items-center gap-6">
-                        <Link href="/shop" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Shop</Link>
-                        <Link href="/track-order" className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Track Order</Link>
-                        <a href={`${import.meta.env.BASE_URL}#contact`} className="text-sm font-medium text-foreground/70 hover:text-primary transition-colors">Contact Us</a>
-                    </nav>
-
-                    <div className="hidden md:flex items-center gap-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Search eco products..."
-                                className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
-                                value={searchQuery}
-                                onChange={handleSearch}
-                            />
-                        </div>
-
-                        {user && <NotificationCenter />}
-
-                        <Link href="/shop/cart">
-                            <Button variant="ghost" size="icon" className="relative">
-                                <ShoppingCart className="h-5 w-5" />
-                                {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
-                                        {cartCount > 99 ? '99+' : cartCount}
-                                    </span>
-                                )}
-                            </Button>
+        <header className="sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div className="frosted-glass rounded-2xl px-4 lg:px-6">
+                    <div className="flex items-center justify-between h-16 lg:h-18">
+                        <Link href="/" className="flex items-center gap-3 border border-border rounded-lg p-1 hover:border-primary/30 transition-all">
+                            <img src={import.meta.env.BASE_URL + "logo-en.png"} alt="EcoHaat" className="h-12 lg:h-14 w-auto" />
                         </Link>
 
-                        {user ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
-                                        <UserIcon className="h-4 w-4" />
-                                        <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <Link href={
-                                        userRole?.toLowerCase() === 'admin' ? "/admin"
-                                            : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "/seller"
-                                                : "/profile"
-                                    }>
-                                        <DropdownMenuItem className="cursor-pointer">
-                                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                                            <span>{
-                                                userRole?.toLowerCase() === 'admin' ? "Admin Panel"
-                                                    : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "Seller Dashboard"
-                                                        : "Profile"
-                                            }</span>
-                                        </DropdownMenuItem>
-                                    </Link>
-                                    <Link href="/orders">
-                                        <DropdownMenuItem className="cursor-pointer">
-                                            <Package className="mr-2 h-4 w-4" />
-                                            <span>My Orders</span>
-                                        </DropdownMenuItem>
-                                    </Link>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={() => { console.log("Logout clicked"); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        <span>Log out</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        ) : (
-                            <Link href="/auth">
-                                <Button className="bg-primary hover:bg-primary/90 font-display font-medium">
-                                    Sign In
+                        <nav className="hidden lg:flex items-center gap-2">
+                            <Link href="/shop" className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all">{t('nav.products')}</Link>
+                            <Link href="/track-order" className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all">{t('orders.trackOrder')}</Link>
+                            <a href={`${import.meta.env.BASE_URL}#our-story`} className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all">{t('landing.whyChooseUs')}</a>
+                        </nav>
+
+                        <div className="hidden md:flex items-center gap-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                    type="search"
+                                    placeholder={t('nav.search')}
+                                    className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
+                                    value={searchQuery}
+                                    onChange={handleSearch}
+                                />
+                            </div>
+
+                            <div className="border border-border rounded-lg">
+                                <LanguageSwitcher />
+                            </div>
+
+                            {user && <NotificationCenter />}
+
+                            <Link href="/shop/cart">
+                                <Button variant="ghost" size="icon" className="relative border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5">
+                                    <ShoppingCart className="h-5 w-5" />
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                                            {cartCount > 99 ? '99+' : cartCount}
+                                        </span>
+                                    )}
                                 </Button>
                             </Link>
-                        )}
-                    </div>
 
-                    <button
-                        className="lg:hidden p-2"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    >
-                        {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-                    </button>
+                            {user ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" className="gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10">
+                                            <UserIcon className="h-4 w-4" />
+                                            <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuLabel>{t('nav.profile')}</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <Link href={
+                                            userRole?.toLowerCase() === 'admin' ? "/admin"
+                                                : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "/seller"
+                                                    : "/profile"
+                                        }>
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                <LayoutDashboard className="mr-2 h-4 w-4" />
+                                                <span>{
+                                                    userRole?.toLowerCase() === 'admin' ? t('nav.adminDashboard')
+                                                        : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? t('nav.sellerDashboard')
+                                                            : t('nav.profile')
+                                                }</span>
+                                            </DropdownMenuItem>
+                                        </Link>
+                                        <Link href="/orders">
+                                            <DropdownMenuItem className="cursor-pointer">
+                                                <Package className="mr-2 h-4 w-4" />
+                                                <span>{t('nav.orders')}</span>
+                                            </DropdownMenuItem>
+                                        </Link>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onSelect={() => { console.log("Logout clicked"); signOut(); }} className="cursor-pointer text-destructive focus:text-destructive">
+                                            <LogOut className="mr-2 h-4 w-4" />
+                                            <span>{t('nav.logout')}</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <Link href="/auth">
+                                    <Button className="bg-primary hover:bg-primary/90 font-display font-medium">
+                                        {t('nav.login')}
+                                    </Button>
+                                </Link>
+                            )}
+                        </div>
+
+                        <div className="lg:hidden flex items-center gap-1">
+                            <button onClick={() => setMobileMenuOpen(true)} className="p-2 border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all">
+                                <Search className="h-5 w-5 text-muted-foreground" />
+                            </button>
+
+                            <Link href="/shop/cart">
+                                <Button variant="ghost" size="icon" className="relative border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5">
+                                    <ShoppingCart className="h-5 w-5" />
+                                    {cartCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center">
+                                            {cartCount > 99 ? '99+' : cartCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </Link>
+
+                            {user && <NotificationCenter />}
+
+                            <div className="border border-border rounded-lg">
+                                <LanguageSwitcher />
+                            </div>
+
+                            <button
+                                className="p-2 border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -136,42 +168,68 @@ export function NavBar({ onSearch }: NavBarProps) {
                     animate={{ opacity: 1, y: 0 }}
                     className="lg:hidden border-t border-border bg-background p-4"
                 >
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-0">
+                        {/* Search */}
                         <Input
                             type="search"
-                            placeholder="Search eco products..."
+                            placeholder={t('nav.search')}
                             className="bg-muted/50 touch-target"
                         />
-                        <Link href="/shop" className="py-3 font-medium touch-manipulation touch-target flex items-center">Shop</Link>
-                        <Link href="/track-order" className="py-3 font-medium touch-manipulation touch-target flex items-center">Track Order</Link>
-                        <a href={`${import.meta.env.BASE_URL}#contact`} className="py-3 font-medium touch-manipulation touch-target flex items-center">Contact Us</a>
-                        {user && (
-                            <div className="py-2 flex items-center justify-between">
-                                <span className="font-medium">Notifications</span>
-                                <NotificationCenter />
-                            </div>
-                        )}
+
+                        {/* Decorative Divider */}
+                        <div className="flex items-center gap-3 my-1">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                            <Leaf className="h-3 w-3 text-primary/40" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                        </div>
+
+                        {/* Navigation Links */}
+                        <Link href="/shop" className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('nav.products')}</Link>
+
+                        <div className="flex items-center gap-3 my-1">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                            <Leaf className="h-3 w-3 text-primary/40" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                        </div>
+
+                        <Link href="/track-order" className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('orders.trackOrder')}</Link>
+
+                        <div className="flex items-center gap-3 my-1">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                            <Leaf className="h-3 w-3 text-primary/40" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                        </div>
+
+                        <a href={`${import.meta.env.BASE_URL}#our-story`} className="py-2 px-2 font-medium touch-manipulation touch-target flex items-center rounded-lg hover:bg-muted/50 transition-colors">{t('landing.whyChooseUs')}</a>
+
+                        <div className="flex items-center gap-3 my-2">
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                            <Leaf className="h-4 w-4 text-primary/60" />
+                            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+                        </div>
+
+                        {/* Auth Section */}
                         {user ? (
-                            <>
+                            <div className="space-y-3">
                                 <Link href={
                                     userRole?.toLowerCase() === 'admin' ? "/admin"
                                         : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "/seller"
                                             : "/profile"
                                 }>
-                                    <Button className="w-full bg-primary mb-2">
+                                    <Button className="w-full bg-primary">
                                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                                        {userRole?.toLowerCase() === 'admin' ? "Admin Panel"
-                                            : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? "Dashboard"
-                                                : "Profile"}
+                                        {userRole?.toLowerCase() === 'admin' ? t('nav.adminDashboard')
+                                            : userRole?.toLowerCase() === 'seller' || userRole?.toLowerCase() === 'uv-seller' ? t('seller.dashboard')
+                                                : t('nav.profile')}
                                     </Button>
                                 </Link>
                                 <Button variant="outline" className="w-full text-destructive border-destructive/20 hover:bg-destructive/5" onClick={() => signOut()}>
                                     <LogOut className="mr-2 h-4 w-4" />
-                                    Log out
+                                    {t('nav.logout')}
                                 </Button>
-                            </>
+                            </div>
                         ) : (
-                            <Link href="/auth"><Button className="w-full bg-primary">Sign In</Button></Link>
+                            <Link href="/auth"><Button className="w-full bg-primary">{t('nav.login')}</Button></Link>
                         )}
                     </div>
                 </motion.div>
@@ -179,3 +237,4 @@ export function NavBar({ onSearch }: NavBarProps) {
         </header>
     );
 }
+

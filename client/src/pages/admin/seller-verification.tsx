@@ -104,7 +104,7 @@ export default function SellerVerificationDetail() {
     if (!seller) return <div className="min-h-screen flex items-center justify-center">Seller not found</div>;
 
     return (
-        <div className="min-h-screen bg-muted/10 pb-20">
+        <div className="min-h-screen bg-grass-pattern pb-20">
             <NavBar />
 
             <div className="max-w-4xl mx-auto px-4 py-8">

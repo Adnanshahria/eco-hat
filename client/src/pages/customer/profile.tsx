@@ -288,7 +288,7 @@ export default function Profile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center">
                 <div className="text-center">
                     <Leaf className="h-12 w-12 animate-pulse text-emerald-500 mx-auto mb-2" />
                     <p className="text-emerald-600">Loading your profile...</p>
@@ -303,7 +303,7 @@ export default function Profile() {
             createProfile();
         }
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center">
                 <div className="text-center">
                     <Leaf className="h-12 w-12 animate-pulse text-emerald-500 mx-auto mb-2" />
                     <p className="text-emerald-600">Setting up your profile...</p>
@@ -315,7 +315,7 @@ export default function Profile() {
     const roleBadge = getRoleBadge(profile.role);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
                 <div className="max-w-2xl mx-auto px-4 py-4">

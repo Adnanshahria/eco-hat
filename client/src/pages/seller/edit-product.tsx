@@ -188,11 +188,11 @@ export default function EditProduct() {
     };
 
     if (fetchingProduct) {
-        return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+        return <div className="min-h-screen bg-grass-pattern flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Sidebar */}
             <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 hidden lg:block">
                 <div className="flex items-center gap-2 mb-8">

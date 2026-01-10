@@ -25,14 +25,14 @@ export default function Cart() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center">
                 <p className="text-muted-foreground">Loading cart...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Restriction Popup */}
             {showRestrictionPopup && (
                 <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">

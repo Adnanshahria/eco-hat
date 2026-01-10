@@ -2,8 +2,8 @@
     "name": "EcoHaat",
     "short_name": "EcoHaat",
     "description": "Buy and sell eco-friendly products in Bangladesh.",
-    "theme_color": "#10b981",
-    "background_color": "#ffffff",
+    "theme_color": "#d4e9d4",
+    "background_color": "#d4e9d4",
     "display": "standalone",
     "start_url": "./",
     "icons": [

@@ -12,6 +12,8 @@ import { createNotification } from "@/components/notifications";
 import { AppLink as Link } from "@/components/app-link";
 import SellerLayout from "@/components/seller-layout";
 
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 interface Product {
     id: number;
     name: string;
@@ -57,15 +59,15 @@ interface Stats {
     };
 }
 
-const statusConfig: Record<string, { label: string; color: string }> = {
-    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700" },
-    confirmed: { label: "Confirmed", color: "bg-blue-100 text-blue-700" },
-    denied: { label: "Denied", color: "bg-red-100 text-red-700" },
-    processing: { label: "Processing", color: "bg-purple-100 text-purple-700" },
-    shipped: { label: "Shipped", color: "bg-indigo-100 text-indigo-700" },
-    at_station: { label: "At Delivery Station", color: "bg-cyan-100 text-cyan-700" },
-    reached_destination: { label: "Reached Destination", color: "bg-teal-100 text-teal-700" },
-    delivered: { label: "Delivered", color: "bg-green-100 text-green-700" },
+const statusColors: Record<string, string> = {
+    pending: "bg-yellow-100 text-yellow-700",
+    confirmed: "bg-blue-100 text-blue-700",
+    denied: "bg-red-100 text-red-700",
+    processing: "bg-purple-100 text-purple-700",
+    shipped: "bg-indigo-100 text-indigo-700",
+    at_station: "bg-cyan-100 text-cyan-700",
+    reached_destination: "bg-teal-100 text-teal-700",
+    delivered: "bg-green-100 text-green-700",
 };
 
 const shopTypes = ["Permanent Shop", "Pop-up Store", "Online Only", "Overseas Seller", "Home Business"];
@@ -74,6 +76,7 @@ type TabType = "dashboard" | "products" | "orders" | "earnings" | "account";
 
 export default function SellerDashboard() {
     const { user, signOut } = useAuth();
+    const { t } = useLanguage();
 
     // Check URL for specific routes
     const [, ordersParams] = useRoute("/seller/orders");
@@ -184,23 +187,23 @@ export default function SellerDashboard() {
 
         if (ordersData) {
             setOrders(ordersData as unknown as OrderItem[]);
-            const pending = ordersData.filter(o => o.item_status === "pending" || !o.item_status);
-            const confirmed = ordersData.filter(o => o.item_status === "confirmed");
-            const delivered = ordersData.filter(o => o.item_status === "delivered" || (o as any).order?.status === "delivered");
-            totalEarnings = delivered.reduce((sum, o) => sum + (o.seller_earning || (o.price_at_purchase || 0) * o.quantity), 0);
-            pendingEarnings = confirmed.reduce((sum, o) => sum + (o.seller_earning || o.price_at_purchase * o.quantity), 0);
+            const pending = ordersData.filter((o: OrderItem) => o.item_status === "pending" || !o.item_status);
+            const confirmed = ordersData.filter((o: OrderItem) => o.item_status === "confirmed");
+            const delivered = ordersData.filter((o: OrderItem) => o.item_status === "delivered" || (o as any).order?.status === "delivered");
+            totalEarnings = delivered.reduce((sum: number, o: OrderItem) => sum + (o.seller_earning || (o.price_at_purchase || 0) * o.quantity), 0);
+            pendingEarnings = confirmed.reduce((sum: number, o: OrderItem) => sum + (o.seller_earning || o.price_at_purchase * o.quantity), 0);
             pendingOrdersCount = pending.length;
             confirmedOrdersCount = confirmed.length;
         }
 
         // Count delivered orders
-        const deliveredOrdersCount = ordersData?.filter(o => o.item_status === "delivered" || (o as any).order?.status === "delivered").length || 0;
+        const deliveredOrdersCount = ordersData?.filter((o: OrderItem) => o.item_status === "delivered" || (o as any).order?.status === "delivered").length || 0;
 
         // Product Stats - calculated from productsData (ALWAYS runs)
         const pStats = {
-            approved: productsData?.filter(p => p.status === 'approved').length || 0,
-            pending: productsData?.filter(p => p.status === 'pending').length || 0,
-            rejected: productsData?.filter(p => p.status === 'rejected').length || 0,
+            approved: productsData?.filter((p: Product) => p.status === 'approved').length || 0,
+            pending: productsData?.filter((p: Product) => p.status === 'pending').length || 0,
+            rejected: productsData?.filter((p: Product) => p.status === 'rejected').length || 0,
         };
 
         setStats({
@@ -357,7 +360,7 @@ export default function SellerDashboard() {
     // Terminated View
     if (isTerminated) {
         return (
-            <div className="min-h-screen bg-background flex flex-col items-center p-8">
+            <div className="min-h-screen bg-grass-pattern flex flex-col items-center p-8">
                 <div className="max-w-2xl w-full">
                     <div className="flex items-center gap-2 mb-8 justify-center">
                         <img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-12" />
@@ -366,10 +369,10 @@ export default function SellerDashboard() {
                         <div className="flex items-start gap-4">
                             <AlertTriangle className="h-8 w-8 text-red-600 flex-shrink-0" />
                             <div>
-                                <h1 className="text-xl font-bold text-red-800 mb-2">Account Terminated</h1>
-                                <p className="text-red-700 mb-4">Your seller account has been terminated by the administration.</p>
+                                <h1 className="text-xl font-bold text-red-800 mb-2">{t('sellerDashboard.terminated.title')}</h1>
+                                <p className="text-red-700 mb-4">{t('sellerDashboard.terminated.message')}</p>
                                 <div className="bg-red-100 p-3 rounded-md border border-red-200">
-                                    <p className="text-xs text-red-800 font-bold uppercase mb-1">Reason</p>
+                                    <p className="text-xs text-red-800 font-bold uppercase mb-1">{t('sellerDashboard.terminated.reason')}</p>
                                     <p className="text-red-900 font-medium">"{terminationReason}"</p>
                                 </div>
                             </div>
@@ -379,7 +382,7 @@ export default function SellerDashboard() {
                     <div className="bg-card border rounded-xl p-6 shadow-sm">
                         {/* ... (Existing Appeal UI) ... */}
                         <div className="flex justify-end pt-4">
-                            <Button variant="outline" onClick={signOut}>Logout</Button>
+                            <Button variant="outline" onClick={signOut}>{t('sellerDashboard.logout')}</Button>
                         </div>
                     </div>
                 </div>
@@ -394,11 +397,11 @@ export default function SellerDashboard() {
     const isRejected = verificationStatus === "rejected";
 
     return (
-        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-grass-pattern flex flex-col lg:flex-row">
             {/* Mobile Header - Logo only */}
             <header className="lg:hidden sticky top-0 z-50 bg-card border-b border-border p-3 flex items-center justify-center gap-2">
                 <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-8 cursor-pointer" /></Link>
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Seller</span>
+                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">{t('footer.shop')}</span>
             </header>
 
             {/* Desktop Sidebar */}
@@ -409,23 +412,24 @@ export default function SellerDashboard() {
                 </div>
                 <nav className="space-y-1 flex-1">
                     {[
-                        { id: "dashboard", route: "/seller", icon: TrendingUp, label: "Overview" },
-                        { id: "orders", route: "/seller/orders", icon: ShoppingCart, label: "Orders", badge: stats.pendingOrders },
-                        { id: "products", route: "/seller/products", icon: Package, label: "My Products" },
-                        { id: "earnings", route: "/seller/earnings", icon: Wallet, label: "Earnings" },
-                        { id: "account", route: "/seller/account", icon: User, label: "Account & Verification" },
-                    ].map(t => (
-                        <Link key={t.id} href={t.route}>
-                            <div className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${activeTab === t.id ? "bg-primary text-primary-foreground shadow-md" : "hover:bg-muted text-muted-foreground hover:text-foreground"}`}>
-                                <t.icon className="h-4 w-4" /> {t.label}
-                                {t.badge ? <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full">{t.badge}</span> : null}
+                        { id: "dashboard", route: "/seller", icon: TrendingUp, label: t('sellerDashboard.overview') },
+                        { id: "orders", route: "/seller/orders", icon: ShoppingCart, label: t('sellerDashboard.orders'), badge: stats.pendingOrders },
+                        { id: "products", route: "/seller/products", icon: Package, label: t('sellerDashboard.products') },
+                        { id: "earnings", route: "/seller/earnings", icon: Wallet, label: t('sellerDashboard.earnings') },
+                        { id: "account", route: "/seller/account", icon: User, label: t('sellerDashboard.account') },
+                        { id: "verification", route: "/seller/verification", icon: ShieldCheck, label: t('sellerDashboard.verifyAccount'), highlight: !isVerified },
+                    ].map(tItem => (
+                        <Link key={tItem.id} href={tItem.route}>
+                            <div className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer ${activeTab === tItem.id ? "bg-primary text-primary-foreground shadow-md" : (tItem as any).highlight ? "hover:bg-yellow-50 text-yellow-700 border border-yellow-200" : "hover:bg-muted text-muted-foreground hover:text-foreground"}`}>
+                                <tItem.icon className="h-4 w-4" /> {tItem.label}
+                                {tItem.badge ? <span className="ml-auto bg-destructive text-destructive-foreground text-[10px] px-1.5 py-0.5 rounded-full">{tItem.badge}</span> : null}
                             </div>
                         </Link>
                     ))}
                 </nav>
                 <div className="mt-auto pt-4 border-t">
-                    <Link href="/seller/add-product"><Button className="w-full gap-2 mb-3 bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="h-4 w-4" />Add New Product</Button></Link>
-                    <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"><LogOut className="h-4 w-4" />Logout</Button>
+                    <Link href="/seller/add-product"><Button className="w-full gap-2 mb-3 bg-emerald-600 hover:bg-emerald-700 text-white"><Plus className="h-4 w-4" />{t('sellerDashboard.addNewProduct')}</Button></Link>
+                    <Button variant="ghost" size="sm" onClick={signOut} className="w-full justify-start gap-2 text-muted-foreground hover:text-destructive"><LogOut className="h-4 w-4" />{t('sellerDashboard.logout')}</Button>
                 </div>
             </aside>
 
@@ -440,7 +444,14 @@ export default function SellerDashboard() {
                         transition={{ duration: 0.2 }}
                         className="mb-4 lg:mb-6"
                     >
-                        <h1 className="text-xl lg:text-2xl font-bold font-display capitalize">{activeTab === 'dashboard' ? 'Dashboard Overview' : activeTab}</h1>
+                        <h1 className="text-xl lg:text-2xl font-bold font-display capitalize">
+                            {activeTab === 'dashboard' ? t('sellerDashboard.dashboardOverview') :
+                                activeTab === 'orders' ? t('sellerDashboard.orders') :
+                                    activeTab === 'products' ? t('sellerDashboard.products') :
+                                        activeTab === 'earnings' ? t('sellerDashboard.earnings') :
+                                            activeTab === 'account' ? t('sellerDashboard.account') :
+                                                activeTab}
+                        </h1>
                     </motion.div>
 
                     {/* Tab Content with Smooth Animations */}
@@ -457,43 +468,45 @@ export default function SellerDashboard() {
                             >
                                 {/* Left Column: Verification & Stats */}
                                 <div className="space-y-6">
-                                    {/* Verification Status Card */}
+                                    {/* Verification Status Card - Simplified */}
                                     <div className={`border rounded-xl p-5 ${isVerified ? "bg-emerald-50 border-emerald-200" : isPending ? "bg-yellow-50 border-yellow-200" : "bg-red-50 border-red-200"}`}>
                                         <div className="flex items-start gap-4">
                                             <div className={`p-3 rounded-full ${isVerified ? "bg-emerald-100 text-emerald-600" : isPending ? "bg-yellow-100 text-yellow-600" : "bg-red-100 text-red-600"}`}>
                                                 {isVerified ? <ShieldCheck className="h-6 w-6" /> : isPending ? <Clock className="h-6 w-6" /> : <AlertTriangle className="h-6 w-6" />}
                                             </div>
-                                            <div>
+                                            <div className="flex-1">
                                                 <h3 className={`font-bold ${isVerified ? "text-emerald-800" : isPending ? "text-yellow-800" : "text-red-800"}`}>
-                                                    {isVerified ? "Account Verified" : isPending ? "Verification Pending" : isRejected ? "Verification Failed" : "Verification Required"}
+                                                    {isVerified ? t('sellerDashboard.accountTab.accountVerified') : isPending ? t('sellerDashboard.accountTab.verificationPending') : isRejected ? t('sellerDashboard.accountTab.verificationFailed') : t('sellerDashboard.accountTab.verificationRequired')}
                                                 </h3>
-                                                <p className="text-sm mt-1 mb-4 opacity-90">
-                                                    {isVerified ? "You have full access to all seller features." : "Please submit valid documents to list products."}
-                                                    {isRejected && <span className="block mt-2 font-medium">Reason: {profile?.rejection_reason}</span>}
+                                                <p className="text-sm mt-1 mb-3 opacity-90">
+                                                    {isVerified ? t('sellerDashboard.accountTab.fullAccess') : isPending ? t('sellerDashboard.accountTab.docsReview') : t('sellerDashboard.accountTab.verifyToList')}
                                                 </p>
 
-                                                {!isVerified && !isPending && (
-                                                    <div className="bg-white/50 rounded-lg p-3 border border-black/5">
-                                                        <Label className="text-xs font-semibold mb-2 block">Upload NID/Trade License</Label>
-                                                        <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,.pdf" />
-
-                                                        {!selectedFile ? (
-                                                            <Button variant="outline" size="sm" className="w-full bg-white" onClick={() => fileInputRef.current?.click()}>
-                                                                <Upload className="h-3 w-3 mr-2" /> Upload Document
-                                                            </Button>
-                                                        ) : (
-                                                            <div className="space-y-2">
-                                                                <div className="flex items-center gap-2 text-xs bg-white p-2 rounded border">
-                                                                    <FileText className="h-3 w-3" />
-                                                                    <span className="truncate flex-1">{selectedFile.name}</span>
-                                                                    <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedFile(null)} />
-                                                                </div>
-                                                                <Button size="sm" className="w-full" onClick={submitVerification} disabled={uploadingDoc}>
-                                                                    {uploadingDoc ? "Uploading..." : "Submit for Review"}
-                                                                </Button>
-                                                            </div>
-                                                        )}
+                                                {/* Seller Info */}
+                                                <div className="bg-white/60 rounded-lg p-3 border border-black/5 space-y-1 text-sm mb-3">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">{t('sellerDashboard.accountTab.sellerId')}:</span>
+                                                        <span className="font-mono font-medium">{profile?.id || "-"}</span>
                                                     </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">{t('sellerDashboard.accountTab.shopName')}:</span>
+                                                        <span className="font-medium">{profile?.username || "-"}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-muted-foreground">{t('sellerDashboard.accountTab.status')}:</span>
+                                                        <span className={`font-medium ${isVerified ? "text-emerald-600" : isPending ? "text-yellow-600" : "text-red-600"}`}>
+                                                            {isVerified ? t('sellerDashboard.accountTab.verified') : isPending ? t('sellerDashboard.accountTab.pendingReview') : t('sellerDashboard.accountTab.notVerified')}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {!isVerified && (
+                                                    <Link href="/seller/verification">
+                                                        <Button size="sm" className="w-full gap-2" variant={isPending ? "outline" : "default"}>
+                                                            <ShieldCheck className="h-4 w-4" />
+                                                            {isPending ? t('sellerDashboard.accountTab.viewStatus') : t('sellerDashboard.accountTab.goToVerification')}
+                                                        </Button>
+                                                    </Link>
                                                 )}
                                             </div>
                                         </div>
@@ -501,96 +514,70 @@ export default function SellerDashboard() {
 
                                     {/* Product Stats Card */}
                                     <div className="bg-card border rounded-xl p-5 shadow-sm">
-                                        <h3 className="font-semibold mb-4 flex items-center gap-2"><Package className="h-4 w-4" /> Product Status</h3>
+                                        <h3 className="font-semibold mb-4 flex items-center gap-2"><Package className="h-4 w-4" /> {t('sellerDashboard.accountTab.productStatus')}</h3>
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between p-2 rounded bg-emerald-50 text-emerald-900 border border-emerald-100">
-                                                <span className="text-sm font-medium flex items-center gap-2"><Check className="h-3 w-3" /> Approved</span>
+                                                <span className="text-sm font-medium flex items-center gap-2"><Check className="h-3 w-3" /> {t('status.approved')}</span>
                                                 <span className="font-bold">{stats.productStats.approved}</span>
                                             </div>
                                             <div className="flex items-center justify-between p-2 rounded bg-yellow-50 text-yellow-900 border border-yellow-100">
-                                                <span className="text-sm font-medium flex items-center gap-2"><Clock className="h-3 w-3" /> Pending</span>
+                                                <span className="text-sm font-medium flex items-center gap-2"><Clock className="h-3 w-3" /> {t('status.pending')}</span>
                                                 <span className="font-bold">{stats.productStats.pending}</span>
                                             </div>
                                             <div className="flex items-center justify-between p-2 rounded bg-red-50 text-red-900 border border-red-100">
-                                                <span className="text-sm font-medium flex items-center gap-2"><X className="h-3 w-3" /> Rejected</span>
+                                                <span className="text-sm font-medium flex items-center gap-2"><X className="h-3 w-3" /> {t('status.rejected')}</span>
                                                 <span className="font-bold">{stats.productStats.rejected}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                {/* Right Column: Edit Profile Form */}
+                                {/* Right Column: Read-Only Shop Details */}
                                 <div className="lg:col-span-2 space-y-6">
                                     <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
                                         <div className="p-4 border-b bg-muted/30">
-                                            <h2 className="font-bold flex items-center gap-2"><Store className="h-5 w-5" /> Shop Details</h2>
+                                            <h2 className="font-bold flex items-center gap-2"><Store className="h-5 w-5" /> {t('sellerDashboard.accountTab.shopDetails')}</h2>
                                         </div>
-                                        <div className="p-6 space-y-4">
-                                            <div className="grid md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label>Shop Name</Label>
-                                                    <Input
-                                                        value={accountForm.username}
-                                                        onChange={e => setAccountForm({ ...accountForm, username: e.target.value })}
-                                                        placeholder="Enter your shop name"
-                                                    />
+                                        <div className="p-6">
+                                            <div className="grid md:grid-cols-2 gap-6">
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.shopName')}</p>
+                                                        <p className="font-medium text-lg">{profile?.username || <span className="text-muted-foreground italic">{t('sellerDashboard.accountTab.notSet')}</span>}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.ownerName')}</p>
+                                                        <p className="font-medium">{profile?.full_name || <span className="text-muted-foreground italic">{t('sellerDashboard.accountTab.notSet')}</span>}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.phoneNumber')}</p>
+                                                        <p className="font-medium">{profile?.phone || <span className="text-muted-foreground italic">{t('sellerDashboard.accountTab.notSet')}</span>}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <Label>Owner Full Name</Label>
-                                                    <Input
-                                                        value={accountForm.full_name}
-                                                        onChange={e => setAccountForm({ ...accountForm, full_name: e.target.value })}
-                                                        placeholder="Legal owner name"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label>Bio / Description</Label>
-                                                <Textarea
-                                                    value={accountForm.bio}
-                                                    onChange={e => setAccountForm({ ...accountForm, bio: e.target.value })}
-                                                    placeholder="Tell customers about your shop..."
-                                                    rows={3}
-                                                />
-                                            </div>
-
-                                            <div className="grid md:grid-cols-2 gap-4">
-                                                <div className="space-y-2">
-                                                    <Label>Phone Number</Label>
-                                                    <Input
-                                                        value={accountForm.phone}
-                                                        onChange={e => setAccountForm({ ...accountForm, phone: e.target.value })}
-                                                        placeholder="+8801..."
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label>Shop Location</Label>
-                                                    <Input
-                                                        value={accountForm.shop_location}
-                                                        onChange={e => setAccountForm({ ...accountForm, shop_location: e.target.value })}
-                                                        placeholder="Address / City"
-                                                    />
+                                                <div className="space-y-4">
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.shopLocation')}</p>
+                                                        <p className="font-medium">{profile?.shop_location || <span className="text-muted-foreground italic">{t('sellerDashboard.accountTab.notSet')}</span>}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.businessType')}</p>
+                                                        <p className="font-medium">{profile?.shop_type || "Permanent Shop"}</p>
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">{t('sellerDashboard.accountTab.email')}</p>
+                                                        <p className="font-medium">{profile?.email || <span className="text-muted-foreground italic">{t('sellerDashboard.accountTab.notSet')}</span>}</p>
+                                                    </div>
                                                 </div>
                                             </div>
-
-                                            <div className="space-y-2">
-                                                <Label>Business Type</Label>
-                                                <select
-                                                    value={accountForm.shop_type}
-                                                    onChange={e => setAccountForm({ ...accountForm, shop_type: e.target.value })}
-                                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                >
-                                                    {shopTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                                                </select>
-                                            </div>
-
-                                            <div className="pt-4 flex justify-end">
-                                                <Button onClick={handleUpdateProfile} disabled={savingProfile} className="gap-2">
-                                                    {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                                                    Save Changes
-                                                </Button>
-                                            </div>
+                                            {profile?.bio && (
+                                                <div className="mt-6 pt-4 border-t">
+                                                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-2">{t('sellerDashboard.accountTab.aboutShop')}</p>
+                                                    <p className="text-muted-foreground">{profile.bio}</p>
+                                                </div>
+                                            )}
+                                            <p className="text-xs text-muted-foreground mt-6 pt-4 border-t">
+                                                {t('sellerDashboard.accountTab.contactSupport')}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -601,16 +588,14 @@ export default function SellerDashboard() {
                         {
                             activeTab === "dashboard" && (
                                 <>
-                                    <p className="text-sm text-muted-foreground mb-6">Welcome back! Here's what's happening in your shop today.</p>
-
                                     {/* Stats */}
                                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
                                         {[
-                                            { label: "Total Sales", value: `৳${stats.totalEarnings}`, icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
-                                            { label: "Delivered", value: stats.deliveredOrders, icon: Check, color: "bg-green-100 text-green-600" },
-                                            { label: "Active Orders", value: stats.confirmedOrders, icon: ShoppingCart, color: "bg-blue-100 text-blue-600" },
-                                            { label: "Pending", value: stats.pendingOrders, icon: Clock, color: "bg-amber-100 text-amber-600" },
-                                            { label: "Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
+                                            { label: t('sellerDashboard.stats.totalSales'), value: `৳${stats.totalEarnings}`, icon: DollarSign, color: "bg-emerald-100 text-emerald-600" },
+                                            { label: t('sellerDashboard.stats.delivered'), value: stats.deliveredOrders, icon: Check, color: "bg-green-100 text-green-600" },
+                                            { label: t('sellerDashboard.stats.activeOrders'), value: stats.confirmedOrders, icon: ShoppingCart, color: "bg-blue-100 text-blue-600" },
+                                            { label: t('sellerDashboard.stats.pending'), value: stats.pendingOrders, icon: Clock, color: "bg-amber-100 text-amber-600" },
+                                            { label: t('sellerDashboard.stats.totalProducts'), value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
                                         ].map(s => (
                                             <div key={s.label} className="bg-card rounded-xl border p-4 shadow-sm hover:shadow-md transition-shadow">
                                                 <div className="flex items-center gap-3 mb-2">
@@ -625,20 +610,20 @@ export default function SellerDashboard() {
                                     {/* Recent Activity / Pending Orders */}
                                     <div className="bg-card rounded-xl border shadow-sm">
                                         <div className="p-5 border-b flex justify-between items-center">
-                                            <h2 className="font-bold text-lg">Recent Orders</h2>
-                                            <Button variant="ghost" size="sm" onClick={() => setActiveTab('orders')}>View All</Button>
+                                            <h2 className="font-bold text-lg">{t('sellerDashboard.recentOrders')}</h2>
+                                            <Button variant="ghost" size="sm" onClick={() => setActiveTab('orders')}>{t('sellerDashboard.viewAll')}</Button>
                                         </div>
                                         {activeOrders.length === 0 && pendingOrders.length === 0 ? (
-                                            <div className="p-8 text-center text-muted-foreground">No recent orders found.</div>
+                                            <div className="p-8 text-center text-muted-foreground">{t('sellerDashboard.noRecentOrders')}</div>
                                         ) : (
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-sm">
                                                     <thead className="bg-muted/30">
                                                         <tr>
-                                                            <th className="text-left p-4 font-medium text-muted-foreground">Order ID</th>
-                                                            <th className="text-left p-4 font-medium text-muted-foreground">Product</th>
-                                                            <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                                                            <th className="text-right p-4 font-medium text-muted-foreground">Amount</th>
+                                                            <th className="text-left p-4 font-medium text-muted-foreground">{t('sellerDashboard.table.orderId')}</th>
+                                                            <th className="text-left p-4 font-medium text-muted-foreground">{t('sellerDashboard.table.product')}</th>
+                                                            <th className="text-left p-4 font-medium text-muted-foreground">{t('sellerDashboard.table.status')}</th>
+                                                            <th className="text-right p-4 font-medium text-muted-foreground">{t('sellerDashboard.table.amount')}</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -646,7 +631,7 @@ export default function SellerDashboard() {
                                                             <tr key={o.id} className="border-t hover:bg-muted/20 transition-colors">
                                                                 <td className="p-4 font-mono">#{o.order?.order_number || o.order?.id}</td>
                                                                 <td className="p-4">{o.product?.name} <span className="text-muted-foreground">x{o.quantity}</span></td>
-                                                                <td className="p-4"><span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig[o.item_status || 'pending']?.color}`}>{statusConfig[o.item_status || 'pending']?.label}</span></td>
+                                                                <td className="p-4"><span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[o.item_status || 'pending']}`}>{t(`status.${o.item_status || 'pending'}`)}</span></td>
                                                                 <td className="p-4 text-right">৳{o.seller_earning}</td>
                                                             </tr>
                                                         ))}
@@ -666,11 +651,11 @@ export default function SellerDashboard() {
                                     {/* Pending Orders */}
                                     <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
                                         <div className="p-4 border-b bg-amber-50/50 flex items-center justify-between">
-                                            <h2 className="font-semibold text-amber-900 flex items-center gap-2"><AlertCircle className="h-4 w-4" />Pending Approval ({pendingOrders.length})</h2>
+                                            <h2 className="font-semibold text-amber-900 flex items-center gap-2"><AlertCircle className="h-4 w-4" />{t('sellerDashboard.ordersTab.pendingApproval')} ({pendingOrders.length})</h2>
                                         </div>
-                                        {pendingOrders.length === 0 ? <div className="p-8 text-center text-muted-foreground">Great job! All orders processed.</div> : (
+                                        {pendingOrders.length === 0 ? <div className="p-8 text-center text-muted-foreground">{t('sellerDashboard.ordersTab.allProcessed')}</div> : (
                                             <table className="w-full text-sm">
-                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">Order</th><th className="text-left p-3">Product</th><th className="text-left p-3">Customer</th><th className="text-left p-3">Earning</th><th className="p-3">Actions</th></tr></thead>
+                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.orderId')}</th><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.customer')}</th><th className="text-left p-3">{t('sellerDashboard.table.earning')}</th><th className="p-3">{t('sellerDashboard.table.actions')}</th></tr></thead>
                                                 <tbody>
                                                     {pendingOrders.map(o => (
                                                         <tr key={o.id} className="border-t">
@@ -679,8 +664,8 @@ export default function SellerDashboard() {
                                                             <td className="p-3">{o.order?.buyer?.username}<br /><span className="text-xs text-muted-foreground">{o.order?.phone}</span></td>
                                                             <td className="p-3 font-bold text-green-600">৳{o.seller_earning || o.price_at_purchase * o.quantity}</td>
                                                             <td className="p-3 flex gap-2">
-                                                                <Button size="sm" className="h-8 bg-green-600 hover:bg-green-700" onClick={() => acceptOrder(o.id, o.order?.id)}>✓ Accept</Button>
-                                                                <Button size="sm" variant="outline" className="h-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDenyModal({ itemId: o.id, reason: "" })}>✕ Deny</Button>
+                                                                <Button size="sm" className="h-8 bg-green-600 hover:bg-green-700" onClick={() => acceptOrder(o.id, o.order?.id)}>✓ {t('sellerDashboard.ordersTab.accept')}</Button>
+                                                                <Button size="sm" variant="outline" className="h-8 text-red-600 border-red-200 hover:bg-red-50" onClick={() => setDenyModal({ itemId: o.id, reason: "" })}>✕ {t('sellerDashboard.ordersTab.deny')}</Button>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -691,22 +676,22 @@ export default function SellerDashboard() {
 
                                     {/* Active Orders */}
                                     <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
-                                        <div className="p-4 border-b"><h2 className="font-semibold">Active Shipments ({activeOrders.length})</h2></div>
-                                        {activeOrders.length === 0 ? <div className="p-8 text-center text-muted-foreground">No active shipments.</div> : (
+                                        <div className="p-4 border-b"><h2 className="font-semibold">{t('sellerDashboard.ordersTab.activeShipments')} ({activeOrders.length})</h2></div>
+                                        {activeOrders.length === 0 ? <div className="p-8 text-center text-muted-foreground">{t('sellerDashboard.ordersTab.noActiveShipments')}</div> : (
                                             <table className="w-full text-sm">
-                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">Order</th><th className="text-left p-3">Product</th><th className="text-left p-3">Status</th><th className="p-3">Actions</th></tr></thead>
+                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.orderId')}</th><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.status')}</th><th className="p-3">{t('sellerDashboard.table.actions')}</th></tr></thead>
                                                 <tbody>
                                                     {activeOrders.map(o => (
                                                         <tr key={o.id} className="border-t">
                                                             <td className="p-3 font-mono">#{o.order?.order_number || o.order?.id}</td>
                                                             <td className="p-3">{o.product?.name} × {o.quantity}</td>
-                                                            <td className="p-3"><span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 font-medium">Processing</span></td>
+                                                            <td className="p-3"><span className="px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-700 font-medium">{t(`status.${o.item_status || 'processing'}`)}</span></td>
                                                             <td className="p-3 flex gap-2">
                                                                 {o.item_status === "confirmed" && (
-                                                                    <Button size="sm" variant="outline" className="h-8" onClick={() => markProcessing(o.id, o.order?.id)}>📦 Processing</Button>
+                                                                    <Button size="sm" variant="outline" className="h-8" onClick={() => markProcessing(o.id, o.order?.id)}>📦 {t('sellerDashboard.ordersTab.processing')}</Button>
                                                                 )}
                                                                 {(o.item_status === "confirmed" || o.item_status === "processing") && (
-                                                                    <Button size="sm" variant="default" className="h-8" onClick={() => updateToShipped(o.id, o.order?.id)}>🚚 Mark Shipped</Button>
+                                                                    <Button size="sm" variant="default" className="h-8" onClick={() => updateToShipped(o.id, o.order?.id)}>🚚 {t('sellerDashboard.ordersTab.markShipped')}</Button>
                                                                 )}
                                                             </td>
                                                         </tr>
@@ -726,7 +711,7 @@ export default function SellerDashboard() {
                             activeTab === "products" && (
                                 <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
                                     <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <h2 className="font-semibold">My Inventory ({products.length})</h2>
+                                        <h2 className="font-semibold">{t('sellerDashboard.productsTab.myInventory')} ({products.length})</h2>
                                         <div className="flex bg-muted/50 p-1 rounded-lg">
                                             {["all", "approved", "pending", "rejected"].map((filter) => (
                                                 <button
@@ -737,22 +722,22 @@ export default function SellerDashboard() {
                                                         : "text-muted-foreground hover:text-foreground"
                                                         }`}
                                                 >
-                                                    {filter}
+                                                    {filter === 'all' ? t('sellerDashboard.viewAll') : t(`status.${filter}`)}
                                                     {filter !== 'all' && <span className="ml-1.5 opacity-70 text-[10px]">
                                                         {stats.productStats[filter as keyof typeof stats.productStats]}
                                                     </span>}
                                                 </button>
                                             ))}
                                         </div>
-                                        <Link href="/seller/add-product"><Button size="sm" className="gap-1 bg-primary text-primary-foreground"><Plus className="h-4 w-4" />Add Product</Button></Link>
+                                        <Link href="/seller/add-product"><Button size="sm" className="gap-1 bg-primary text-primary-foreground"><Plus className="h-4 w-4" />{t('sellerDashboard.productsTab.addProduct')}</Button></Link>
                                     </div>
 
-                                    {loading ? <div className="p-8 text-center text-muted-foreground">Loading...</div> : products.length === 0 ? (
-                                        <div className="p-12 text-center"><Package className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" /><p className="text-muted-foreground">You haven't listed any products yet.</p></div>
+                                    {loading ? <div className="p-8 text-center text-muted-foreground">{t('sellerDashboard.productsTab.loading')}</div> : products.length === 0 ? (
+                                        <div className="p-12 text-center"><Package className="h-12 w-12 mx-auto text-muted-foreground mb-3 opacity-50" /><p className="text-muted-foreground">{t('sellerDashboard.productsTab.noProducts')}</p></div>
                                     ) : (
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-sm">
-                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">Product</th><th className="text-left p-3">Price</th><th className="text-left p-3">Stock</th><th className="text-left p-3">Status</th><th className="p-3"></th></tr></thead>
+                                                <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.price')}</th><th className="text-left p-3">{t('sellerDashboard.table.stock')}</th><th className="text-left p-3">{t('sellerDashboard.table.status')}</th><th className="p-3"></th></tr></thead>
                                                 <tbody>
                                                     {products
                                                         .filter(p => productFilter === 'all' || (p.status || 'pending') === productFilter)
@@ -763,10 +748,10 @@ export default function SellerDashboard() {
                                                                     <span className="truncate">{p.name}</span>
                                                                 </td>
                                                                 <td className="p-3">৳{p.price}</td>
-                                                                <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${p.stock > 10 ? "bg-green-100 text-green-700" : p.stock > 0 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{p.stock} units</span></td>
+                                                                <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${p.stock > 10 ? "bg-green-100 text-green-700" : p.stock > 0 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>{p.stock} {t('sellerDashboard.productsTab.units')}</span></td>
                                                                 <td className="p-3">
                                                                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${p.status === 'approved' ? "bg-green-100 text-green-700" : p.status === 'rejected' ? "bg-red-100 text-red-700" : "bg-yellow-100 text-yellow-700"}`}>
-                                                                        {p.status || 'pending'}
+                                                                        {t(`status.${p.status || 'pending'}`)}
                                                                     </span>
                                                                     {p.status === 'rejected' && <p className="text-[10px] text-red-600 mt-1 max-w-[150px] leading-tight">{p.rejection_reason}</p>}
                                                                 </td>
@@ -779,7 +764,7 @@ export default function SellerDashboard() {
                                                     {products.filter(p => productFilter === 'all' || (p.status || 'pending') === productFilter).length === 0 && (
                                                         <tr>
                                                             <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                                                                No {productFilter} products found.
+                                                                {t('sellerDashboard.productsTab.noFilteredProducts')}
                                                             </td>
                                                         </tr>
                                                     )}
@@ -799,29 +784,29 @@ export default function SellerDashboard() {
                                         <div className="bg-card rounded-xl border p-6 shadow-sm">
                                             <div className="flex items-center gap-3 mb-4">
                                                 <div className="h-12 w-12 rounded-xl bg-green-100 flex items-center justify-center"><DollarSign className="h-6 w-6 text-green-600" /></div>
-                                                <div><p className="text-sm text-muted-foreground">Total Payout</p><p className="text-3xl font-bold text-green-600">৳{stats.totalEarnings}</p></div>
+                                                <div><p className="text-sm text-muted-foreground">{t('sellerDashboard.earningsTab.totalPayout')}</p><p className="text-3xl font-bold text-green-600">৳{stats.totalEarnings}</p></div>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Earnings from completed & delivered orders.</p>
+                                            <p className="text-xs text-muted-foreground">{t('sellerDashboard.earningsTab.payoutDesc')}</p>
                                         </div>
                                         <div className="bg-card rounded-xl border p-6 shadow-sm">
                                             <div className="flex items-center gap-3 mb-4">
                                                 <div className="h-12 w-12 rounded-xl bg-purple-100 flex items-center justify-center"><Wallet className="h-6 w-6 text-purple-600" /></div>
-                                                <div><p className="text-sm text-muted-foreground">Pending Earnings</p><p className="text-3xl font-bold text-purple-600">৳{stats.pendingEarnings}</p></div>
+                                                <div><p className="text-sm text-muted-foreground">{t('sellerDashboard.earningsTab.pendingEarnings')}</p><p className="text-3xl font-bold text-purple-600">৳{stats.pendingEarnings}</p></div>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">Funds held for active orders.</p>
+                                            <p className="text-xs text-muted-foreground">{t('sellerDashboard.earningsTab.pendingDesc')}</p>
                                         </div>
                                     </div>
                                     <div className="bg-card rounded-xl border overflow-hidden shadow-sm">
-                                        <div className="p-4 border-b"><h2 className="font-semibold">Recent Transactions</h2></div>
+                                        <div className="p-4 border-b"><h2 className="font-semibold">{t('sellerDashboard.earningsTab.recentTransactions')}</h2></div>
                                         <table className="w-full text-sm">
-                                            <thead className="bg-muted/50"><tr><th className="text-left p-3">Order</th><th className="text-left p-3">Product</th><th className="text-left p-3">Status</th><th className="text-right p-3">Earning</th></tr></thead>
+                                            <thead className="bg-muted/50"><tr><th className="text-left p-3">{t('sellerDashboard.table.orderId')}</th><th className="text-left p-3">{t('sellerDashboard.table.product')}</th><th className="text-left p-3">{t('sellerDashboard.table.status')}</th><th className="text-right p-3">{t('sellerDashboard.table.earning')}</th></tr></thead>
                                             <tbody>
                                                 {orders.filter(o => o.item_status === "confirmed" || (o as any).order?.status === "delivered").map(o => (
                                                     <tr key={o.id} className="border-t">
                                                         <td className="p-3 font-mono">#{o.order?.order_number || o.order?.id}</td>
                                                         <td className="p-3">{o.product?.name} × {o.quantity}</td>
-                                                        <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${statusConfig[(o as any).order?.status || "pending"]?.color}`}>{statusConfig[(o as any).order?.status || "pending"]?.label}</span></td>
-                                                        <td className="p-3 text-right font-medium text-green-600">৳{o.seller_earning || o.price_at_purchase * o.quantity}</td>
+                                                        <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs ${statusColors[(o as any).order?.status || "pending"]}`}>{t(`status.${(o as any).order?.status || "pending"}`)}</span></td>
+                                                        <td className="p-3 text-right font-bold text-green-600">৳{o.seller_earning || o.price_at_purchase * o.quantity}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>

@@ -94,12 +94,12 @@ export default function OrderTracking() {
     };
 
     return (
-        <div className="min-h-screen bg-background pb-20">
+        <div className="min-h-screen bg-grass-pattern pb-20">
             {/* Navbar */}
             <NavBar />
 
             {/* Hero Section */}
-            <div className="bg-primary/5 py-16 px-4">
+            <div className="frosted-glass rounded-2xl mx-4 my-8 py-16 px-4">
                 <div className="max-w-2xl mx-auto text-center space-y-6">
                     <h1 className="text-3xl md:text-4xl font-bold font-display text-foreground">
                         Track Your Order
@@ -125,7 +125,7 @@ export default function OrderTracking() {
 
             {/* Results Section */}
             {order && (
-                <div className="max-w-3xl mx-auto px-4 mt-12 bg-card rounded-2xl border shadow-sm p-6 md:p-8">
+                <div className="max-w-3xl mx-auto px-4 mt-12 frosted-glass rounded-2xl p-6 md:p-8">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                         <div>
                             <div className="flex items-center gap-3 mb-1">

@@ -317,7 +317,7 @@ export default function AdminDashboard() {
     const nonAdmins = users.filter(u => u.role !== "admin");
 
     return (
-        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-grass-pattern flex flex-col lg:flex-row">
             {/* Mobile Header - Logo only */}
             <header className="lg:hidden sticky top-0 z-50 bg-card border-b border-border p-3 flex items-center justify-center gap-2">
                 <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-8 cursor-pointer" /></Link>

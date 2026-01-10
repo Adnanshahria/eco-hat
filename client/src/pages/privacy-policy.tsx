@@ -4,7 +4,7 @@ import { AppLink as Link } from "@/components/app-link";
 
 export default function PrivacyPolicy() {
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-grass-pattern">
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
                     <Link href="/">

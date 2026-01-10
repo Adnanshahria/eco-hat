@@ -93,7 +93,7 @@ export function NotificationCenter() {
 
     return (
         <div className="relative" ref={containerRef}>
-            <Button variant="ghost" size="icon" className="relative" onClick={() => setIsOpen(!isOpen)}>
+            <Button variant="ghost" size="icon" className="relative border border-border rounded-lg hover:border-primary/30 hover:bg-primary/5 transition-all" onClick={() => setIsOpen(!isOpen)}>
                 <Bell className="h-5 w-5" />
                 {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 h-3 w-3 bg-red-500 rounded-full border-2 border-background" />

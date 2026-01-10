@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 type AuthMode = "login" | "register";
 type UserRole = "buyer" | "seller";
@@ -37,6 +38,7 @@ export default function Auth() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [, setLocation] = useLocation();
+    const { t } = useLanguage();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -96,7 +98,7 @@ export default function Auth() {
     };
 
     return (
-        <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50 safe-area-insets flex items-center justify-center p-4">
+        <div className="min-h-screen relative overflow-hidden bg-grass-pattern safe-area-insets flex items-center justify-center p-4">
             {/* Animated Background Elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 {/* Floating Leaves */}
@@ -133,7 +135,7 @@ export default function Auth() {
                 className="w-full max-w-md relative z-10"
             >
                 {/* Glassmorphism Card */}
-                <div className="glass rounded-3xl shadow-2xl p-8 border border-white/40">
+                <div className="frosted-glass rounded-3xl shadow-2xl p-8">
                     {/* Logo with Glow */}
                     <motion.div
                         initial={{ scale: 0.8, opacity: 0 }}
@@ -155,7 +157,7 @@ export default function Auth() {
                         className="text-center mb-6"
                     >
                         <h1 className="font-display text-2xl font-bold text-foreground mb-1">
-                            {mode === "login" ? "Welcome Back!" : "Join EcoHaat"}
+                            {mode === "login" ? t('auth.loginTitle') : t('auth.registerTitle')}
                         </h1>
                         <p className="text-muted-foreground text-sm">
                             {mode === "login" ? "Sign in to continue your eco journey" : "Start your sustainable shopping journey"}
@@ -171,7 +173,7 @@ export default function Auth() {
                                 className={`flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 ${mode === m ? "bg-white shadow-md text-primary" : "text-muted-foreground hover:text-foreground"}`}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                {m === "login" ? "Sign In" : "Create Account"}
+                                {m === "login" ? t('auth.loginBtn') : t('auth.registerBtn')}
                             </motion.button>
                         ))}
                     </div>
@@ -184,7 +186,7 @@ export default function Auth() {
                                 animate={{ opacity: 1, height: "auto" }}
                                 exit={{ opacity: 0, height: 0 }}
                             >
-                                <Label htmlFor="fullName" className="text-sm font-medium">Your Name</Label>
+                                <Label htmlFor="fullName" className="text-sm font-medium">{t('auth.nameLabel')}</Label>
                                 <div className="relative mt-1.5">
                                     <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input
@@ -200,7 +202,7 @@ export default function Auth() {
                         )}
 
                         <div>
-                            <Label htmlFor="email" className="text-sm font-medium">Email</Label>
+                            <Label htmlFor="email" className="text-sm font-medium">{t('auth.emailLabel')}</Label>
                             <div className="relative mt-1.5">
                                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -216,7 +218,7 @@ export default function Auth() {
                         </div>
 
                         <div>
-                            <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                            <Label htmlFor="password" className="text-sm font-medium">{t('auth.passwordLabel')}</Label>
                             <div className="relative mt-1.5">
                                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
@@ -281,7 +283,7 @@ export default function Auth() {
                                 <Loader2 className="h-5 w-5 animate-spin" />
                             ) : (
                                 <>
-                                    {mode === "login" ? "Sign In" : "Create Account"}
+                                    {mode === "login" ? t('auth.loginBtn') : t('auth.registerBtn')}
                                     <ArrowRight className="ml-2 h-5 w-5" />
                                 </>
                             )}

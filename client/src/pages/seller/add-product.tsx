@@ -179,12 +179,12 @@ export default function AddProduct() {
     };
 
     if (checkingStatus) {
-        return <div className="min-h-screen bg-background flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+        return <div className="min-h-screen bg-grass-pattern flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
     if (verificationStatus !== "verified") {
         return (
-            <div className="min-h-screen bg-background flex">
+            <div className="min-h-screen bg-grass-pattern flex">
                 <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 hidden lg:block">
                     {/* Simplified Sidebar for unverified state */}
                     <div className="flex items-center gap-2 mb-8">
@@ -204,7 +204,7 @@ export default function AddProduct() {
                         <p className="text-muted-foreground mb-6">
                             You must complete the verification process before listing products. This ensures a safe marketplace for everyone.
                         </p>
-                        <Link href="/seller/profile">
+                        <Link href="/seller/verification">
                             <Button className="w-full gap-2">
                                 <Store className="h-4 w-4" /> Go to Verification
                             </Button>
@@ -216,7 +216,7 @@ export default function AddProduct() {
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Sidebar */}
             <aside className="fixed left-0 top-0 h-full w-64 bg-card border-r border-border p-6 hidden lg:block">
                 <div className="flex items-center gap-2 mb-8">
