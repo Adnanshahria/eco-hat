@@ -62,7 +62,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                             </div>
                             <h1 style="color:#059669;font-size:24px;text-align:center;margin:0 0 20px 0;">${title}</h1>
                             <div style="background:#f0fdf4;border-radius:12px;padding:20px;margin-bottom:25px;">
-                                <p style="color:#374151;font-size:15px;line-height:1.7;margin:0;">${message}</p>
+                                <p style="color:#374151;font-size:15px;line-height:1.7;margin:0;">${message.replace(/\n/g, '<br>')}</p>
                             </div>
                             <div style="text-align:center;">
                                 <a href="https://ecohaat.bd" style="display:inline-block;background:linear-gradient(135deg, #059669 0%, #10B981 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:14px;">Visit EcoHaat</a>
