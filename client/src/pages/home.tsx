@@ -156,32 +156,32 @@ export default function Home() {
               transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
               className="relative hidden lg:block"
             >
-              <div className="relative w-full aspect-square max-w-lg mx-auto">
+              <div className="relative w-full max-w-md mx-auto">
                 <div className="absolute inset-0 bg-gradient-leaf rounded-full opacity-20 blur-3xl"></div>
                 {/* Emotionally Engaging Impact Story */}
-                <div className="absolute inset-4 bg-card rounded-3xl shadow-2xl border border-card-border overflow-hidden">
-                  <div className="h-full flex flex-col justify-between p-6">
+                <div className="relative bg-card rounded-3xl shadow-2xl border border-card-border overflow-hidden">
+                  <div className="flex flex-col justify-between p-6 min-h-[300px]">
                     {/* Header with Nature Icon */}
                     <div className="text-center">
                       <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-sm font-medium">
                         <Heart className="h-4 w-4" />
-                        Our Impact Together
+                        {t('landing.impact.title')}
                       </div>
                     </div>
 
                     {/* Central Emotional Message */}
                     <div className="text-center space-y-4">
-                      <p className="font-serif text-2xl italic text-foreground/80 leading-relaxed">
-                        "Every purchase plants a seed of change"
+                      <p className="font-serif text-xl italic text-foreground/80 leading-relaxed">
+                        "{t('landing.impact.quote')}"
                       </p>
                       <div className="flex justify-center gap-8">
                         <div className="text-center">
-                          <p className="text-3xl font-bold text-primary">120+</p>
-                          <p className="text-xs text-muted-foreground">Trees Planted</p>
+                          <p className="text-2xl font-bold text-primary">120+</p>
+                          <p className="text-xs text-muted-foreground">{t('landing.impact.trees')}</p>
                         </div>
                         <div className="text-center">
-                          <p className="text-3xl font-bold text-primary">45</p>
-                          <p className="text-xs text-muted-foreground">Artisans Supported</p>
+                          <p className="text-2xl font-bold text-primary">45</p>
+                          <p className="text-xs text-muted-foreground">{t('landing.impact.artisans')}</p>
                         </div>
                       </div>
                     </div>
@@ -189,29 +189,31 @@ export default function Home() {
                     {/* Footer - Community */}
                     <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-4 w-4" />
-                      <span>Join 10,000+ conscious shoppers</span>
+                      <span>{t('landing.impact.join')}</span>
                     </div>
                   </div>
                 </div>
-                <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Recycle className="h-6 w-6 text-primary" />
+
+                {/* Floating Badges - Positioned outside main card */}
+                <div className="absolute -bottom-6 -left-6 bg-card rounded-2xl shadow-xl p-3 border border-card-border z-10">
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Recycle className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">{t('landing.plasticFree')}</p>
-                      <p className="text-xs text-muted-foreground">{t('landing.guaranteed')}</p>
+                      <p className="font-semibold text-xs">{t('landing.plasticFree')}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('landing.guaranteed')}</p>
                     </div>
                   </div>
                 </div>
-                <div className="absolute -top-4 -right-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <Heart className="h-6 w-6 text-emerald-600" />
+                <div className="absolute -top-4 -right-4 bg-card rounded-2xl shadow-xl p-3 border border-card-border z-10">
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <Heart className="h-5 w-5 text-emerald-600" />
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">{t('landing.madeInBD')}</p>
-                      <p className="text-xs text-muted-foreground">{t('landing.localArtisans')}</p>
+                      <p className="font-semibold text-xs">{t('landing.madeInBD')}</p>
+                      <p className="text-[10px] text-muted-foreground">{t('landing.localArtisans')}</p>
                     </div>
                   </div>
                 </div>

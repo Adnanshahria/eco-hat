@@ -78,6 +78,13 @@
         "shopByCategoryDesc": "Explore our curated collection of sustainable products for every aspect of your life",
         "featuredDesc": "Handpicked sustainable essentials for conscious living",
         "viewAll": "View All Products",
+        "impact": {
+            "title": "Our Impact Together",
+            "quote": "Every purchase plants a seed of change",
+            "trees": "Trees Planted",
+            "artisans": "Artisans Supported",
+            "join": "Join 10,000+ conscious shoppers"
+        },
         "testimonialsTitle": "What Our Customers Say",
         "testimonialsDesc": "Join thousands of eco-conscious shoppers making a difference",
         "meetTeam": "Meet Our Team",
