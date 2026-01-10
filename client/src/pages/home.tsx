@@ -158,31 +158,39 @@ export default function Home() {
             >
               <div className="relative w-full aspect-square max-w-lg mx-auto">
                 <div className="absolute inset-0 bg-gradient-leaf rounded-full opacity-20 blur-3xl"></div>
-                {/* Product Showcase Grid */}
-                <div className="absolute inset-4 grid grid-cols-2 gap-3">
-                  {/* Featured Product 1 */}
-                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                    <div className="text-5xl mb-3">🪥</div>
-                    <p className="font-medium text-sm text-center">Bamboo Toothbrush</p>
-                    <p className="text-primary font-bold">৳250</p>
-                  </div>
-                  {/* Featured Product 2 */}
-                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                    <div className="text-5xl mb-3">🧼</div>
-                    <p className="font-medium text-sm text-center">Organic Soap</p>
-                    <p className="text-primary font-bold">৳120</p>
-                  </div>
-                  {/* Featured Product 3 */}
-                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
-                    <div className="text-5xl mb-3">👜</div>
-                    <p className="font-medium text-sm text-center">Jute Bag</p>
-                    <p className="text-primary font-bold">৳180</p>
-                  </div>
-                  {/* Call to Action */}
-                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl shadow-lg border border-primary/30 p-4 flex flex-col items-center justify-center hover:from-primary/30 hover:to-primary/20 transition-all cursor-pointer">
-                    <Leaf className="h-10 w-10 text-primary mb-2" />
-                    <p className="font-display font-semibold text-primary text-center">50+ Products</p>
-                    <p className="text-xs text-muted-foreground">Explore Now</p>
+                {/* Emotionally Engaging Impact Story */}
+                <div className="absolute inset-4 bg-card rounded-3xl shadow-2xl border border-card-border overflow-hidden">
+                  <div className="h-full flex flex-col justify-between p-6">
+                    {/* Header with Nature Icon */}
+                    <div className="text-center">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full text-primary text-sm font-medium">
+                        <Heart className="h-4 w-4" />
+                        Our Impact Together
+                      </div>
+                    </div>
+
+                    {/* Central Emotional Message */}
+                    <div className="text-center space-y-4">
+                      <p className="font-serif text-2xl italic text-foreground/80 leading-relaxed">
+                        "Every purchase plants a seed of change"
+                      </p>
+                      <div className="flex justify-center gap-8">
+                        <div className="text-center">
+                          <p className="text-3xl font-bold text-primary">120+</p>
+                          <p className="text-xs text-muted-foreground">Trees Planted</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-3xl font-bold text-primary">45</p>
+                          <p className="text-xs text-muted-foreground">Artisans Supported</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Footer - Community */}
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-4 w-4" />
+                      <span>Join 10,000+ conscious shoppers</span>
+                    </div>
                   </div>
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
