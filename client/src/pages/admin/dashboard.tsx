@@ -37,7 +37,21 @@ function SendNotificationSection({ users }: { users: User[] }) {
         setSending(true);
         setResult(null);
         try {
+            // Send in-app notification
             await createNotification(selectedUserId, title, message, notifType);
+
+            // Also send email notification
+            fetch("/api/notifications/admin/send", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: selectedUser?.email,
+                    title,
+                    message,
+                    type: notifType
+                })
+            }).catch(err => console.warn("Email send failed (SMTP may not be configured):", err));
+
             setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
             setTitle("");
             setMessage("");
@@ -95,9 +109,9 @@ function SendNotificationSection({ users }: { users: User[] }) {
                                     <p className="text-xs text-muted-foreground">{u.email}</p>
                                 </div>
                                 <span className={`text-[10px] px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
-                                        u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
-                                            u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-gray-100 text-gray-700'
+                                    u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
+                                        u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
+                                            'bg-gray-100 text-gray-700'
                                     }`}>
                                     {u.role}
                                 </span>
@@ -139,11 +153,11 @@ function SendNotificationSection({ users }: { users: User[] }) {
                                     key={t}
                                     onClick={() => setNotifType(t)}
                                     className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition ${notifType === t
-                                            ? t === "info" ? "bg-blue-500 text-white" :
-                                                t === "success" ? "bg-green-500 text-white" :
-                                                    t === "warning" ? "bg-yellow-500 text-white" :
-                                                        "bg-red-500 text-white"
-                                            : "bg-muted hover:bg-muted/80"
+                                        ? t === "info" ? "bg-blue-500 text-white" :
+                                            t === "success" ? "bg-green-500 text-white" :
+                                                t === "warning" ? "bg-yellow-500 text-white" :
+                                                    "bg-red-500 text-white"
+                                        : "bg-muted hover:bg-muted/80"
                                         }`}
                                 >
                                     {t}
