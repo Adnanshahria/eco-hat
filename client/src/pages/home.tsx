@@ -106,9 +106,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <motion.div
-              initial={{ opacity: 0, x: -30 }}
+              initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
               className="text-center lg:text-left frosted-glass rounded-2xl p-4 lg:p-6 hover:border-primary/30 transition-colors"
             >
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-primary/30 bg-primary/10 text-primary text-sm font-medium mb-6">
@@ -151,20 +151,38 @@ export default function Home() {
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
               className="relative hidden lg:block"
             >
               <div className="relative w-full aspect-square max-w-lg mx-auto">
                 <div className="absolute inset-0 bg-gradient-leaf rounded-full opacity-20 blur-3xl"></div>
-                <div className="absolute inset-8 bg-card rounded-3xl shadow-2xl overflow-hidden border border-card-border">
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <div className="text-8xl mb-4">🌿</div>
-                      <p className="font-display text-xl font-semibold text-primary">{t('landing.ecoLiving')}</p>
-                      <p className="text-sm text-muted-foreground mt-2">{t('landing.startsHere')}</p>
-                    </div>
+                {/* Product Showcase Grid */}
+                <div className="absolute inset-4 grid grid-cols-2 gap-3">
+                  {/* Featured Product 1 */}
+                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                    <div className="text-5xl mb-3">🪥</div>
+                    <p className="font-medium text-sm text-center">Bamboo Toothbrush</p>
+                    <p className="text-primary font-bold">৳250</p>
+                  </div>
+                  {/* Featured Product 2 */}
+                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                    <div className="text-5xl mb-3">🧼</div>
+                    <p className="font-medium text-sm text-center">Organic Soap</p>
+                    <p className="text-primary font-bold">৳120</p>
+                  </div>
+                  {/* Featured Product 3 */}
+                  <div className="bg-card rounded-2xl shadow-lg border border-card-border p-4 flex flex-col items-center justify-center hover:scale-105 transition-transform cursor-pointer">
+                    <div className="text-5xl mb-3">👜</div>
+                    <p className="font-medium text-sm text-center">Jute Bag</p>
+                    <p className="text-primary font-bold">৳180</p>
+                  </div>
+                  {/* Call to Action */}
+                  <div className="bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl shadow-lg border border-primary/30 p-4 flex flex-col items-center justify-center hover:from-primary/30 hover:to-primary/20 transition-all cursor-pointer">
+                    <Leaf className="h-10 w-10 text-primary mb-2" />
+                    <p className="font-display font-semibold text-primary text-center">50+ Products</p>
+                    <p className="text-xs text-muted-foreground">Explore Now</p>
                   </div>
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-card rounded-2xl shadow-xl p-4 border border-card-border">
@@ -209,10 +227,10 @@ export default function Home() {
               {categories.map((category, index) => (
                 <motion.div
                   key={category.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.1 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                   className="group cursor-pointer touch-manipulation"
                   data-testid={`card-category-${category.id}`}
                 >
@@ -248,10 +266,10 @@ export default function Home() {
               {featuredProducts.map((product, index) => (
                 <motion.div
                   key={product.id}
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
                   className="group touch-manipulation"
                   data-testid={`card-product-${product.id}`}
                 >
