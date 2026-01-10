@@ -167,7 +167,7 @@ export default function SellerDashboard() {
         const { data: ordersData, error: ordersError } = await supabase
             .from("order_items")
             .select(`
-                id, quantity, price_at_purchase, seller_earning, item_status, denial_reason,
+                id, quantity, price_at_purchase, seller_earning, item_status, denial_reason, payment_received, payment_sent_to_seller,
                 order:orders!order_id (id, order_number, status, phone, total_amount, shipping_address, created_at),
                 product:products!product_id (name)
             `)
