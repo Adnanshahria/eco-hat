@@ -115,7 +115,7 @@ export default function Home() {
                 <Leaf className="h-4 w-4" />
                 {t('landing.freshOrganic')}
               </span>
-              <h1 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-4">
+              <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight mb-4 whitespace-nowrap">
                 <span className="text-gradient-green">{t('landing.heroTitle')}</span>
               </h1>
               <p className="text-base text-muted-foreground mb-6 max-w-lg mx-auto lg:mx-0">
