@@ -18,16 +18,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(localStorage.getItem("userRole"));
 
-    const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0) => {
-        // Set cached role immediately for faster UI, but still fetch fresh
+    const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0, forceRefresh = false) => {
         const cachedRole = localStorage.getItem("userRole");
-        if (cachedRole && retryCount === 0) {
+
+        // Only use cached role if NOT force refresh and we have a cached value
+        // This provides instant UI while we fetch fresh data
+        if (cachedRole && retryCount === 0 && !forceRefresh) {
             setUserRole(cachedRole);
-            // Don't return - continue to fetch fresh role in background
         }
 
         try {
-            // Reduced timeout from 15s to 5s for faster failure
+            // Fetch fresh role from database
             const queryPromise = supabase.from("users").select("role").eq("email", email).single();
             const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string }; status: number }>((resolve) =>
                 setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 5000)
@@ -36,30 +37,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
             if (!isMounted()) return;
 
-            if (data) {
+            if (data && data.role) {
+                // ALWAYS update with fresh role from database
                 setUserRole(data.role);
                 localStorage.setItem("userRole", data.role);
+                console.log("Role fetched from DB:", data.role);
             } else if (error && error.code === "PGRST116") {
                 // User doesn't exist in DB yet - this is normal during signup
-                // Do NOT create user here. Let auth.tsx or profile.tsx handle it.
-                // Just set a temporary client-side role.
-                console.log("User not found in DB, waiting for signup flow to create...");
-                if (retryCount < 3) {
-                    // Retry a few times in case auth.tsx is still creating the record
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                console.log("User not found in DB, retrying...");
+                if (retryCount < 5) {
+                    await new Promise(resolve => setTimeout(resolve, 800));
                     if (isMounted()) {
-                        return fetchUserRole(email, isMounted, retryCount + 1);
+                        return fetchUserRole(email, isMounted, retryCount + 1, forceRefresh);
                     }
                 } else {
-                    // After retries, just set null - the app will redirect to profile or handle gracefully
+                    // After retries, clear cache and set null
+                    localStorage.removeItem("userRole");
                     setUserRole(null);
                 }
             } else if (error) {
-                // Use cached role or default to buyer
-                setUserRole(cachedRole || "buyer");
+                console.warn("Error fetching role:", error);
+                // On error, keep cached if available, otherwise null
+                if (!cachedRole) setUserRole(null);
             }
         } catch (err) {
-            if (isMounted()) setUserRole(cachedRole || "buyer");
+            console.error("Role fetch exception:", err);
+            if (isMounted() && !cachedRole) setUserRole(null);
         }
     };
 
