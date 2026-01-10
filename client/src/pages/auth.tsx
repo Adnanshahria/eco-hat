@@ -62,7 +62,7 @@ export default function Auth() {
                 console.warn("Session created immediately - Email confirmation might be disabled in Supabase.");
 
                 // Create user record in the database with correct role
-                const userId = await generateUserId(role);
+                const userId = generateUserId(role);
                 await supabase.from("users").upsert({
                     user_id: userId,
                     username: fullName,
@@ -98,7 +98,7 @@ export default function Auth() {
 
             if (data.session) {
                 // Success! Create user record in our table if needed (triggers usually handle this, but we can double check)
-                const userId = await generateUserId(role);
+                const userId = generateUserId(role);
                 const actualRole = role === 'seller' ? 'uv-seller' : 'buyer';
 
                 await supabase.from("users").upsert({
@@ -280,13 +280,13 @@ export default function Auth() {
         }
     };
 
-    const generateUserId = async (role: UserRole): Promise<string> => {
+    const generateUserId = (role: UserRole): string => {
         const prefix = role === "seller" ? "SLR" : "USR";
-        const today = new Date();
-        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, "");
-        const { count } = await supabase.from("users").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString().slice(0, 10));
-        const sequence = String((count || 0) + 1).padStart(3, "0");
-        return `${prefix}-${dateStr}-${sequence}`;
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+        // Use timestamp milliseconds + random suffix for uniqueness (no DB query needed)
+        const uniqueSuffix = now.getTime().toString(36).slice(-4) + Math.random().toString(36).slice(-3);
+        return `${prefix}-${dateStr}-${uniqueSuffix.toUpperCase()}`;
     };
 
     const redirectByRole = (userRole: string) => {

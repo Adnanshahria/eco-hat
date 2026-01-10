@@ -22,16 +22,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const cachedRole = localStorage.getItem("userRole");
 
         // Only use cached role if NOT force refresh and we have a cached value
-        // This provides instant UI while we fetch fresh data
         if (cachedRole && retryCount === 0 && !forceRefresh) {
             setUserRole(cachedRole);
         }
 
         try {
-            // Fetch fresh role from database
-            const queryPromise = supabase.from("users").select("role").eq("email", email).single();
+            // Check localStorage again - concurrent registration might have set it while we were waiting
+            const warmRole = localStorage.getItem("userRole");
+            if (warmRole && !userRole) {
+                setUserRole(warmRole);
+            }
+
+            // Fetch fresh role from database using maybeSingle() to avoid 406 errors
+            const queryPromise = supabase.from("users").select("role").eq("email", email).maybeSingle();
             const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string }; status: number }>((resolve) =>
-                setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 5000)
+                setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 8000)
             );
 
             const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
@@ -42,11 +47,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setUserRole(data.role);
                 localStorage.setItem("userRole", data.role);
                 console.log("Role fetched from DB:", data.role);
-            } else if (error && error.code === "PGRST116") {
-                // User doesn't exist in DB yet - this is normal during signup
-                console.log("User not found in DB, retrying...");
-                if (retryCount < 5) {
-                    await new Promise(resolve => setTimeout(resolve, 800));
+            } else if (!data || (error && (error as any).code === "PGRST116")) {
+                // User doesn't exist in DB yet or query failed gracefully
+                console.log("User not found in DB, retrying... Attempt:", retryCount + 1);
+
+                // Check localStorage one more time before deciding to retry
+                const lateRole = localStorage.getItem("userRole");
+                if (lateRole) {
+                    setUserRole(lateRole);
+                    return;
+                }
+
+                if (retryCount < 8) { // Increased retries to ~8 seconds
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     if (isMounted()) {
                         return fetchUserRole(email, isMounted, retryCount + 1, forceRefresh);
                     }
@@ -57,7 +70,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
             } else if (error) {
                 console.warn("Error fetching role:", error);
-                // On error, keep cached if available, otherwise null
                 if (!cachedRole) setUserRole(null);
             }
         } catch (err) {

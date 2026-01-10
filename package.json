@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "vite dev --port 5000",
-    "dev:server": "set PORT=3001 && tsx server/index.ts",
+    "dev:server": "set PORT=3001 && tsx --env-file=.env server/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc"

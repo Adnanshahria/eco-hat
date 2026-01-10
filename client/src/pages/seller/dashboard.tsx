@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useRoute } from "wouter";
+import { useRoute, useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { Package, Plus, TrendingUp, DollarSign, ShoppingCart, LogOut, Trash2, Clock, Check, X, Truck, AlertCircle, Wallet, AlertTriangle, User, Store, ShieldCheck, FileText, Upload, Save, Loader2, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,26 +78,23 @@ export default function SellerDashboard() {
     const { user, signOut } = useAuth();
     const { t } = useLanguage();
 
-    // Check URL for specific routes
-    const [, ordersParams] = useRoute("/seller/orders");
-    const [, productsParams] = useRoute("/seller/products");
-    const [, earningsParams] = useRoute("/seller/earnings");
-    const [, accountParams] = useRoute("/seller/account");
+    // Check URL for specific routes - use the match boolean (first element), not params
+    const [isOrdersRoute] = useRoute("/seller/orders");
+    const [isProductsRoute] = useRoute("/seller/products");
+    const [isEarningsRoute] = useRoute("/seller/earnings");
+    const [isAccountRoute] = useRoute("/seller/account");
 
-    // Determine active tab from URL
+    // Determine active tab from URL using the match booleans
     const getActiveTab = (): TabType => {
-        if (ordersParams) return "orders";
-        if (productsParams) return "products";
-        if (earningsParams) return "earnings";
-        if (accountParams) return "account";
+        if (isOrdersRoute) return "orders";
+        if (isProductsRoute) return "products";
+        if (isEarningsRoute) return "earnings";
+        if (isAccountRoute) return "account";
         return "dashboard";
     };
 
-    const [activeTab, setActiveTab] = useState<TabType>(getActiveTab());
-
-    useEffect(() => {
-        setActiveTab(getActiveTab());
-    }, [ordersParams, productsParams, earningsParams, accountParams]);
+    // Use a computed value directly instead of useState to avoid stale state on initial render
+    const activeTab = getActiveTab();
 
     const [products, setProducts] = useState<Product[]>([]);
     const [orders, setOrders] = useState<OrderItem[]>([]);
@@ -627,7 +624,7 @@ export default function SellerDashboard() {
                                     <div className="bg-card rounded-xl border shadow-sm">
                                         <div className="p-5 border-b flex justify-between items-center">
                                             <h2 className="font-bold text-lg">{t('sellerDashboard.recentOrders')}</h2>
-                                            <Button variant="ghost" size="sm" onClick={() => setActiveTab('orders')}>{t('sellerDashboard.viewAll')}</Button>
+                                            <Link href="/seller/orders"><Button variant="ghost" size="sm">{t('sellerDashboard.viewAll')}</Button></Link>
                                         </div>
                                         {activeOrders.length === 0 && pendingOrders.length === 0 ? (
                                             <div className="p-8 text-center text-muted-foreground">{t('sellerDashboard.noRecentOrders')}</div>
