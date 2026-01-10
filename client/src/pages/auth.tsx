@@ -37,6 +37,9 @@ export default function Auth() {
         setError(null);
 
         try {
+            // Determine the actual role (seller becomes uv-seller)
+            const actualRole = role === 'seller' ? 'uv-seller' : 'buyer';
+
             // Sign up with Supabase
             // Note: In Supabase dashboard, disable "Confirm email" if you want to skip this, 
             // BUT for OTP verification to work as a gate, we keep it enabled.
@@ -44,7 +47,7 @@ export default function Auth() {
                 email,
                 password,
                 options: {
-                    data: { full_name: fullName, role: role === 'seller' ? 'uv-seller' : role }
+                    data: { full_name: fullName, role: actualRole }
                 }
             });
 
@@ -55,12 +58,21 @@ export default function Auth() {
                 setMessage("✅ Verification code sent to your email.");
                 setStep("otp"); // Move to OTP entry
             } else if (data.session) {
-                // Check if user is already verified but just logging in (should normally go to login)
-                // However, if "Confirm Email" is OFF in Supabase, this block hits.
-                // We should technically prevent this if we WANT to enforce OTP, but we can't easily force Supabase to NOT give a session if config is wrong.
-                // Best we can do is redirect, but let's notify the user if they expected OTP.
+                // Email confirmation is disabled - create user record immediately
                 console.warn("Session created immediately - Email confirmation might be disabled in Supabase.");
-                redirectByRole(role);
+
+                // Create user record in the database with correct role
+                const userId = await generateUserId(role);
+                await supabase.from("users").upsert({
+                    user_id: userId,
+                    username: fullName,
+                    full_name: fullName,
+                    email,
+                    role: actualRole
+                }, { onConflict: 'email' });
+
+                localStorage.setItem("userRole", actualRole);
+                redirectByRole(actualRole);
             }
         } catch (err: any) {
             setError(err.message);
@@ -87,7 +99,7 @@ export default function Auth() {
             if (data.session) {
                 // Success! Create user record in our table if needed (triggers usually handle this, but we can double check)
                 const userId = await generateUserId(role);
-                const actualRole = role === 'seller' ? 'uv-seller' : role;
+                const actualRole = role === 'seller' ? 'uv-seller' : 'buyer';
 
                 await supabase.from("users").upsert({
                     user_id: userId,
