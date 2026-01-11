@@ -81,7 +81,7 @@ export default function SellerVerificationDetail() {
             return;
         }
 
-        // Notify Seller
+        // Notify Seller (in-app)
         await createNotification(
             seller.id,
             approved ? "Seller Verification Approved" : "Seller Verification Rejected",
@@ -90,6 +90,24 @@ export default function SellerVerificationDetail() {
                 : `Your seller verification request was rejected. Reason: ${reason}`,
             approved ? "success" : "error"
         );
+
+        // Send email notification
+        try {
+            await fetch('/api/notifications/admin/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: seller.email,
+                    title: approved ? "🎉 Seller Verification Approved!" : "❌ Seller Verification Rejected",
+                    message: approved
+                        ? "Congratulations! Your seller account has been approved. You can now list products on EcoHaat."
+                        : `Your seller verification request was rejected. Reason: ${reason}`,
+                    type: approved ? "success" : "error"
+                })
+            });
+        } catch (emailErr) {
+            console.warn("Email notification failed:", emailErr);
+        }
 
         if (approved) {
             // Ensure role is seller
@@ -104,7 +122,7 @@ export default function SellerVerificationDetail() {
     if (!seller) return <div className="min-h-screen flex items-center justify-center">Seller not found</div>;
 
     return (
-        <div className="min-h-screen bg-muted/10 pb-20">
+        <div className="min-h-screen bg-grass-pattern pb-20">
             <NavBar />
 
             <div className="max-w-4xl mx-auto px-4 py-8">

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Package, ArrowLeft, Truck, Check, Clock, X, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Package, ArrowLeft, Truck, Check, Clock, X, ChevronDown, ChevronUp, AlertTriangle, Star, MapPin, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { AppLink as Link } from "@/components/app-link";
@@ -12,7 +13,9 @@ interface OrderItem {
     price_at_purchase: number;
     item_status: string;
     denial_reason: string | null;
+    product_id: number;
     product: {
+        id: number;
         name: string;
         images: string[] | null;
     };
@@ -20,6 +23,7 @@ interface OrderItem {
 
 interface Order {
     id: number;
+    order_number: string;
     total_amount: number;
     subtotal: number;
     delivery_charge: number;
@@ -45,7 +49,8 @@ const statusConfig: Record<string, { label: string; color: string; icon: any }> 
     denied: { label: "Denied", color: "bg-red-100 text-red-700", icon: X },
     processing: { label: "Processing", color: "bg-purple-100 text-purple-700", icon: Package },
     shipped: { label: "Shipped", color: "bg-indigo-100 text-indigo-700", icon: Truck },
-    out_for_delivery: { label: "Out for Delivery", color: "bg-cyan-100 text-cyan-700", icon: Truck },
+    at_station: { label: "At Delivery Station", color: "bg-cyan-100 text-cyan-700", icon: MapPin },
+    reached_destination: { label: "Ready for Delivery", color: "bg-teal-100 text-teal-700", icon: Target },
     delivered: { label: "Delivered", color: "bg-green-100 text-green-700", icon: Check },
     cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700", icon: X },
 };
@@ -55,6 +60,11 @@ export default function CustomerOrders() {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+    const [reviewModal, setReviewModal] = useState<{ orderId: number; item: OrderItem } | null>(null);
+    const [reviewRating, setReviewRating] = useState(5);
+    const [reviewComment, setReviewComment] = useState("");
+    const [submittingReview, setSubmittingReview] = useState(false);
+    const [buyerId, setBuyerId] = useState<number | null>(null);
 
     useEffect(() => { fetchOrders(); }, [user]);
 
@@ -62,25 +72,142 @@ export default function CustomerOrders() {
         if (!user?.email) return;
         const { data: profile } = await supabase.from("users").select("id").eq("email", user.email).single();
         if (!profile) return;
+        setBuyerId(profile.id);
 
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from("orders")
             .select(`
-        *,
-        order_items (
-          id, quantity, price_at_purchase, item_status, denial_reason,
-          product:products (name, images)
-        )
-      `)
+                *,
+                order_items!order_id (
+                    id, quantity, price_at_purchase, item_status, denial_reason, product_id,
+                    product:products!product_id (id, name, images)
+                )
+            `)
             .eq("buyer_id", profile.id)
             .order("created_at", { ascending: false });
 
+        if (error) {
+            console.error("Orders fetch error:", error);
+        }
         if (data) setOrders(data as unknown as Order[]);
         setLoading(false);
     };
 
+    const markDelivered = async (orderId: number) => {
+        // Update order status
+        const { data: orderData } = await supabase.from("orders").select("tracking_history, order_number").eq("id", orderId).single();
+        const history = orderData?.tracking_history || [];
+        history.push({ status: "delivered", timestamp: new Date().toISOString(), note: "✅ Package received by buyer" });
+        await supabase.from("orders").update({ status: "delivered", tracking_history: history }).eq("id", orderId);
+
+        // Update all order items
+        await supabase.from("order_items").update({ item_status: "delivered" }).eq("order_id", orderId);
+
+        // Get order items to find sellers
+        const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
+        const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
+
+        // Notify sellers via email
+        for (const sellerId of sellerIds) {
+            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+            if (sellerData?.email) {
+                fetch("/api/notifications/seller/order-status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: sellerData.email,
+                        orderNumber: orderData?.order_number || orderId,
+                        status: "delivered",
+                        buyerName: "Customer"
+                    }),
+                }).catch(err => console.error("Failed to send seller email:", err));
+            }
+        }
+
+        // Notify admin via email
+        fetch("/api/notifications/admin/order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderNumber: orderData?.order_number || orderId,
+                status: "delivered",
+                note: "Package received by buyer"
+            }),
+        }).catch(err => console.error("Failed to send admin email:", err));
+
+        // Update local state
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: "delivered" } : o));
+    };
+
+    const cancelOrder = async (orderId: number) => {
+        if (!confirm("Are you sure you want to cancel this order?")) return;
+
+        // Update order status to cancelled
+        const { data: orderData } = await supabase.from("orders").select("tracking_history, order_number").eq("id", orderId).single();
+        const history = orderData?.tracking_history || [];
+        history.push({ status: "cancelled", timestamp: new Date().toISOString(), note: "❌ Order cancelled by customer" });
+        await supabase.from("orders").update({ status: "cancelled", tracking_history: history }).eq("id", orderId);
+
+        // Update all order items
+        await supabase.from("order_items").update({ item_status: "cancelled" }).eq("order_id", orderId);
+
+        // Get order items to find sellers
+        const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
+        const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
+
+        // Notify sellers via email
+        for (const sellerId of sellerIds) {
+            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+            if (sellerData?.email) {
+                fetch("/api/notifications/seller/order-status", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: sellerData.email,
+                        orderNumber: orderData?.order_number || orderId,
+                        status: "cancelled",
+                        buyerName: "Customer"
+                    }),
+                }).catch(err => console.error("Failed to send seller email:", err));
+            }
+        }
+
+        // Notify admin via email
+        fetch("/api/notifications/admin/order-status", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                orderNumber: orderData?.order_number || orderId,
+                status: "cancelled",
+                note: "Order cancelled by customer"
+            }),
+        }).catch(err => console.error("Failed to send admin email:", err));
+
+        // Update local state
+        setOrders(orders.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o));
+    };
+
+    const submitReview = async () => {
+        if (!reviewModal || !buyerId) return;
+        setSubmittingReview(true);
+
+        await supabase.from("reviews").insert({
+            order_item_id: reviewModal.item.id,
+            product_id: (reviewModal.item.product as any).id || null,
+            buyer_id: buyerId,
+            rating: reviewRating,
+            comment: reviewComment
+        });
+
+        setSubmittingReview(false);
+        setReviewModal(null);
+        setReviewComment("");
+        setReviewRating(5);
+        alert("Thank you for your review! 🎉");
+    };
+
     return (
-        <div className="min-h-screen bg-background touch-manipulation">
+        <div className="min-h-screen bg-grass-pattern touch-manipulation">
             <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
@@ -115,7 +242,7 @@ export default function CustomerOrders() {
                                             <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${status.color}`}><status.icon className="h-5 w-5" /></div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-mono font-bold">#{order.id}</span>
+                                                    <span className="font-mono font-bold">#{order.order_number || order.id}</span>
                                                     <span className={`text-xs px-2 py-0.5 rounded-full ${status.color}`}>{status.label}</span>
                                                     {hasItemDenied && <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700">Partial Denial</span>}
                                                 </div>
@@ -183,9 +310,44 @@ export default function CustomerOrders() {
                                             </div>
 
                                             {/* Tracking */}
+                                            <div className="mb-4 flex gap-2">
+                                                <Link href={`/track-order/${order.id}`}>
+                                                    <Button variant="outline" className="gap-2">
+                                                        <Truck className="h-4 w-4" />
+                                                        Track Order
+                                                    </Button>
+                                                </Link>
+                                                {order.status === "pending" && (
+                                                    <Button variant="destructive" className="gap-2" onClick={() => cancelOrder(order.id)}>
+                                                        <X className="h-4 w-4" />
+                                                        Cancel Order
+                                                    </Button>
+                                                )}
+                                                {order.status === "reached_destination" && (
+                                                    <Button className="bg-green-600 hover:bg-green-700 gap-2" onClick={() => markDelivered(order.id)}>
+                                                        <Check className="h-4 w-4" />
+                                                        Mark as Delivered
+                                                    </Button>
+                                                )}
+                                            </div>
+
+                                            {/* Review Items (after delivery) */}
+                                            {order.status === "delivered" && (
+                                                <div className="mb-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                                                    <p className="text-sm font-medium text-green-800 mb-2">✨ Order Delivered! Rate your items:</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {order.order_items.map((item) => (
+                                                            <Button key={item.id} size="sm" variant="outline" className="gap-1" onClick={() => setReviewModal({ orderId: order.id, item })}>
+                                                                <Star className="h-3 w-3" /> Review {item.product?.name?.slice(0, 15)}...
+                                                            </Button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {order.tracking_history && order.tracking_history.length > 0 && (
                                                 <div>
-                                                    <p className="text-sm font-medium mb-2">Tracking</p>
+                                                    <p className="text-sm font-medium mb-2">Tracking History</p>
                                                     <div className="space-y-2">
                                                         {order.tracking_history.map((track, i) => (
                                                             <div key={i} className="flex items-start gap-2 text-sm">
@@ -208,6 +370,39 @@ export default function CustomerOrders() {
                     </div>
                 )}
             </div>
+
+            {/* Review Modal */}
+            {reviewModal && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-card rounded-xl p-6 max-w-md w-full shadow-xl">
+                        <h3 className="text-lg font-bold mb-4">Rate Your Purchase</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{reviewModal.item.product?.name}</p>
+
+                        {/* Star Rating */}
+                        <div className="flex gap-1 mb-4">
+                            {[1, 2, 3, 4, 5].map(star => (
+                                <button key={star} onClick={() => setReviewRating(star)} className={`text-2xl ${star <= reviewRating ? 'text-yellow-400' : 'text-gray-300'}`}>
+                                    ★
+                                </button>
+                            ))}
+                        </div>
+
+                        <Textarea
+                            placeholder="Write your review (optional)..."
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            className="mb-4"
+                        />
+
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={() => setReviewModal(null)} className="flex-1">Cancel</Button>
+                            <Button onClick={submitReview} disabled={submittingReview} className="flex-1 bg-primary">
+                                {submittingReview ? "Submitting..." : "Submit Review"}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

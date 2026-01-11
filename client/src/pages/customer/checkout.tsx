@@ -9,6 +9,7 @@ import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { AppLink as Link } from "@/components/app-link";
 import { useLocation } from "wouter";
+import { createNotification } from "@/components/notifications";
 
 const divisions = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"];
 
@@ -145,7 +146,87 @@ export default function Checkout() {
             }));
 
             await supabase.from("order_items").insert(orderItems);
+
+            // Decrement stock for each purchased product
+            for (const item of items) {
+                const newStock = Math.max(0, item.product.stock - item.quantity);
+                await supabase
+                    .from("products")
+                    .update({ stock: newStock })
+                    .eq("id", item.product_id);
+            }
+
+            // Notify each unique seller about their new order (in-app + email)
+            const uniqueSellerIds = Array.from(new Set(orderItems.map(item => item.seller_id).filter(Boolean))) as number[];
+            for (const sellerId of uniqueSellerIds) {
+                await createNotification(
+                    sellerId,
+                    "🛒 New Order Received!",
+                    `Order #${orderNumber} needs your approval. Check your seller dashboard.`,
+                    "info"
+                );
+
+                // Send email to seller
+                const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
+                if (sellerData?.email) {
+                    const sellerItem = items.find(i => i.product.seller_id === sellerId);
+                    fetch("/api/notifications/seller/new-order", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            email: sellerData.email,
+                            orderNumber,
+                            productName: sellerItem?.product.name || "Product",
+                            quantity: sellerItem?.quantity || 1,
+                            earning: sellerItem ? sellerItem.product.price * sellerItem.quantity : 0
+                        }),
+                    }).catch(err => console.error("Failed to send seller email:", err));
+                }
+            }
+
+            // Notify all admins for oversight (in-app + email)
+            const { data: admins } = await supabase
+                .from("users")
+                .select("id, email")
+                .eq("role", "admin");
+            if (admins) {
+                for (const admin of admins) {
+                    await createNotification(
+                        admin.id,
+                        "📦 New Order Placed",
+                        `Order #${orderNumber} (৳${grandTotal}) placed and awaiting seller approval.`,
+                        "info"
+                    );
+
+                    // Send email to admin
+                    if (admin.email) {
+                        fetch("/api/notifications/admin/new-order", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                email: admin.email,
+                                orderNumber,
+                                total: grandTotal,
+                                buyerName: form.fullName
+                            }),
+                        }).catch(err => console.error("Failed to send admin email:", err));
+                    }
+                }
+            }
+
             await clearCart();
+
+            // Send order confirmation email to buyer
+            fetch("/api/notifications/order-confirmation", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: profile.email,
+                    orderId: order.id,
+                    total: grandTotal
+                }),
+            }).catch(err => console.error("Failed to send order confirmation email:", err));
+
             setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err: any) {
             console.error("Checkout error:", err);
@@ -158,7 +239,7 @@ export default function Checkout() {
 
     if (items.length === 0) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-green-50 flex items-center justify-center p-4">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center p-4">
                 <div className="text-center">
                     <Leaf className="h-12 w-12 text-emerald-400 mx-auto mb-3" />
                     <h2 className="text-xl font-semibold text-emerald-800 mb-2">Your cart is empty</h2>
@@ -169,7 +250,7 @@ export default function Checkout() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50">
+        <div className="min-h-screen bg-grass-pattern">
             <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-emerald-100">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
@@ -199,7 +280,7 @@ export default function Checkout() {
                     <div className="lg:col-span-2">
                         {/* Step 1: Shipping */}
                         {step === 1 && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-6">
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="frosted-glass rounded-2xl p-6">
                                 <h2 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center gap-2">
                                     <MapPin className="h-5 w-5 text-emerald-500" /> Shipping Information
                                 </h2>
@@ -270,7 +351,7 @@ export default function Checkout() {
 
                         {/* Step 2: Payment */}
                         {step === 2 && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-6">
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="frosted-glass rounded-2xl p-6">
                                 <h2 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center gap-2">
                                     <CreditCard className="h-5 w-5 text-emerald-500" /> Payment Method
                                 </h2>
@@ -303,7 +384,7 @@ export default function Checkout() {
 
                         {/* Step 3: Review */}
                         {step === 3 && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-6">
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="frosted-glass rounded-2xl p-6">
                                 <h2 className="text-lg font-semibold text-emerald-800 mb-4 flex items-center gap-2">
                                     <Truck className="h-5 w-5 text-emerald-500" /> Review Order
                                 </h2>
@@ -344,7 +425,7 @@ export default function Checkout() {
 
                     {/* Order Summary */}
                     <div className="lg:col-span-1 order-first lg:order-last">
-                        <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 lg:p-6 lg:sticky lg:top-24">
+                        <div className="frosted-glass rounded-2xl p-4 lg:p-6 lg:sticky lg:top-24">
                             <h3 className="font-semibold text-emerald-800 mb-4 flex items-center gap-2">
                                 <Leaf className="h-4 w-4 text-emerald-500" /> Order Summary
                             </h3>

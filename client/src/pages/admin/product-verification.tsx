@@ -225,7 +225,7 @@ export default function ProductVerificationDetail() {
     if (!product) return <div className="min-h-screen flex items-center justify-center text-lg">Product not found (ID: {id})</div>;
 
     return (
-        <div className="min-h-screen bg-muted/10 pb-20">
+        <div className="min-h-screen bg-grass-pattern pb-20">
             <NavBar />
 
             <div className="max-w-5xl mx-auto px-4 py-8">

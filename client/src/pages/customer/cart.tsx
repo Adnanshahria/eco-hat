@@ -1,28 +1,73 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft } from "lucide-react";
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/components/auth-provider";
 import { AppLink as Link } from "@/components/app-link";
 
 export default function Cart() {
     const { items, loading, removeFromCart, updateQuantity, total, itemCount } = useCart();
+    const { userRole } = useAuth();
+    const [showRestrictionPopup, setShowRestrictionPopup] = useState(false);
 
     const deliveryCharge = total >= 500 ? 0 : 60;
     const grandTotal = total + deliveryCharge;
 
+    // Check if user can checkout (only buyers can checkout)
+    const isRestrictedRole = userRole && ['seller', 'uv-seller', 'admin'].includes(userRole.toLowerCase());
+
+    const handleCheckout = () => {
+        if (isRestrictedRole) {
+            setShowRestrictionPopup(true);
+        }
+    };
+
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center">
                 <p className="text-muted-foreground">Loading cart...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-grass-pattern">
+            {/* Restriction Popup */}
+            {showRestrictionPopup && (
+                <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-card rounded-xl p-6 w-full max-w-md shadow-2xl border"
+                    >
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center">
+                                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                            </div>
+                            <div>
+                                <h3 className="font-bold text-lg">Cannot Place Order</h3>
+                                <p className="text-sm text-muted-foreground">Account restriction</p>
+                            </div>
+                        </div>
+                        <p className="text-muted-foreground mb-6">
+                            You can't order from a <strong className="text-foreground">{userRole}</strong> account.
+                            Please create a normal buyer account to purchase products.
+                        </p>
+                        <div className="flex gap-3">
+                            <Button variant="outline" className="flex-1" onClick={() => setShowRestrictionPopup(false)}>
+                                Close
+                            </Button>
+                            <Link href="/auth" className="flex-1">
+                                <Button className="w-full bg-primary">Create Buyer Account</Button>
+                            </Link>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border">
+            <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-center gap-4">
                         <Link href="/shop">
@@ -145,12 +190,23 @@ export default function Cart() {
                                     </div>
                                 </div>
 
-                                <Link href="/shop/checkout">
-                                    <Button className="w-full mt-6 bg-primary hover:bg-primary/90 gap-2">
+                                {/* Checkout Button - conditional based on role */}
+                                {isRestrictedRole ? (
+                                    <Button
+                                        className="w-full mt-6 bg-primary hover:bg-primary/90 gap-2"
+                                        onClick={handleCheckout}
+                                    >
                                         Proceed to Checkout
                                         <ArrowRight className="h-4 w-4" />
                                     </Button>
-                                </Link>
+                                ) : (
+                                    <Link href="/shop/checkout">
+                                        <Button className="w-full mt-6 bg-primary hover:bg-primary/90 gap-2">
+                                            Proceed to Checkout
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Button>
+                                    </Link>
+                                )}
 
                                 <Link href="/shop">
                                     <Button variant="ghost" className="w-full mt-2">
@@ -165,3 +221,4 @@ export default function Cart() {
         </div>
     );
 }
+

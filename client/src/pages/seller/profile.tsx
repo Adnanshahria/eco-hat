@@ -108,6 +108,7 @@ export default function SellerProfile() {
 
             await supabase.from("users").update({
                 verification_status: "pending",
+                role: "uv-seller", // Set role to unverified seller
                 identity_documents: [documentUrl],
             }).eq("id", profile.id);
 
@@ -141,7 +142,7 @@ export default function SellerProfile() {
     };
 
     if (loading) {
-        return <div className="min-h-screen bg-slate-50 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+        return <div className="min-h-screen bg-grass-pattern flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
     }
 
     if (!profile) return null;
@@ -151,7 +152,7 @@ export default function SellerProfile() {
     const isRejected = profile.verification_status === "rejected";
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-white border-b shadow-sm">
                 <div className="max-w-3xl mx-auto px-4 py-4">

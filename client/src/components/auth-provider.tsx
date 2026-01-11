@@ -18,63 +18,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string | null>(localStorage.getItem("userRole"));
 
-    const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0) => {
-        // Set cached role immediately for faster UI, but still fetch fresh
+    const fetchUserRole = async (email: string, isMounted: () => boolean, retryCount = 0, forceRefresh = false) => {
         const cachedRole = localStorage.getItem("userRole");
-        if (cachedRole && retryCount === 0) {
+
+        // Only use cached role if NOT force refresh and we have a cached value
+        if (cachedRole && retryCount === 0 && !forceRefresh) {
             setUserRole(cachedRole);
-            // Don't return - continue to fetch fresh role in background
         }
 
         try {
-            // Reduced timeout from 15s to 5s for faster failure
-            const queryPromise = supabase.from("users").select("role").eq("email", email).single();
+            // Check localStorage again - concurrent registration might have set it while we were waiting
+            const warmRole = localStorage.getItem("userRole");
+            if (warmRole && !userRole) {
+                setUserRole(warmRole);
+            }
+
+            // Fetch fresh role from database using maybeSingle() to avoid 406 errors
+            const queryPromise = supabase.from("users").select("role").eq("email", email).maybeSingle();
             const timeoutPromise = new Promise<{ data: null; error: { code: string; message: string }; status: number }>((resolve) =>
-                setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 5000)
+                setTimeout(() => resolve({ data: null, error: { code: "TIMEOUT", message: "Query timeout" }, status: 408 }), 8000)
             );
 
             const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
             if (!isMounted()) return;
 
-            if (data) {
+            if (data && data.role) {
+                // ALWAYS update with fresh role from database
                 setUserRole(data.role);
                 localStorage.setItem("userRole", data.role);
-            } else if (error && error.code === "PGRST116") {
-                // User doesn't exist - retry or create
-                if (retryCount < 2) {
-                    await new Promise(resolve => setTimeout(resolve, 300));
+                console.log("Role fetched from DB:", data.role);
+            } else if (!data || (error && (error as any).code === "PGRST116")) {
+                // User doesn't exist in DB yet or query failed gracefully
+                console.log("User not found in DB, retrying... Attempt:", retryCount + 1);
+
+                // Check localStorage one more time before deciding to retry
+                const lateRole = localStorage.getItem("userRole");
+                if (lateRole) {
+                    setUserRole(lateRole);
+                    return;
+                }
+
+                if (retryCount < 8) { // Increased retries to ~8 seconds
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     if (isMounted()) {
-                        return fetchUserRole(email, isMounted, retryCount + 1);
+                        return fetchUserRole(email, isMounted, retryCount + 1, forceRefresh);
                     }
                 } else {
-                    // Create user record
-                    const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-                    const userId = `USR-${dateStr}-${Math.random().toString(36).substr(2, 3).toUpperCase()}`;
-
-                    const { data: created, error: createErr } = await supabase.from("users").insert({
-                        user_id: userId,
-                        username: email.split("@")[0],
-                        full_name: email.split("@")[0],
-                        email: email,
-                        role: "buyer",
-                        saved_addresses: []
-                    }).select("role").single();
-
-                    if (!isMounted()) return;
-                    if (created) {
-                        setUserRole(created.role);
-                        localStorage.setItem("userRole", created.role);
-                    } else {
-                        setUserRole("buyer");
-                        localStorage.setItem("userRole", "buyer");
-                    }
+                    // After retries, clear cache and set null
+                    localStorage.removeItem("userRole");
+                    setUserRole(null);
                 }
             } else if (error) {
-                // Use cached role or default to buyer
-                setUserRole(cachedRole || "buyer");
+                console.warn("Error fetching role:", error);
+                if (!cachedRole) setUserRole(null);
             }
         } catch (err) {
-            if (isMounted()) setUserRole(cachedRole || "buyer");
+            console.error("Role fetch exception:", err);
+            if (isMounted() && !cachedRole) setUserRole(null);
         }
     };
 
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         // Always clear local state and storage regardless of Supabase response
+        localStorage.removeItem("userRole"); // Clear cached role
         for (const key of Object.keys(localStorage)) {
             if (key.startsWith('sb-') && key.includes('-auth')) {
                 localStorage.removeItem(key);

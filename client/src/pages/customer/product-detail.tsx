@@ -7,6 +7,8 @@ import { useParams } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useCart } from "@/lib/cart-context";
 import { NavBar } from "@/components/navbar";
+import { useAuth } from "@/components/auth-provider";
+import { useToast } from "@/hooks/use-toast";
 
 interface Review {
     id: number;
@@ -42,6 +44,8 @@ export default function ProductDetail() {
     const [quantity, setQuantity] = useState(1);
     const [adding, setAdding] = useState(false);
     const { addToCart } = useCart();
+    const { user } = useAuth();
+    const { toast } = useToast();
 
     useEffect(() => {
         if (id) {
@@ -110,7 +114,7 @@ export default function ProductDetail() {
             .from("reviews")
             .select(`
                 *,
-                user:users(username, avatar_url)
+                user:users!buyer_id(username, avatar_url)
             `)
             .eq("product_id", id)
             .order("created_at", { ascending: false });
@@ -119,10 +123,34 @@ export default function ProductDetail() {
     };
 
     const handleAddToCart = async () => {
+        if (!user) {
+            toast({
+                title: "Login Required",
+                description: "You must be logged in to add items to your cart.",
+                variant: "destructive",
+            });
+            return;
+        }
+
         if (!product) return;
         setAdding(true);
-        await addToCart(product.id, quantity);
-        setAdding(false);
+
+        try {
+            await addToCart(product.id, quantity);
+            toast({
+                title: "Added to Cart",
+                description: `${quantity} x ${product.name} added successfully.`,
+                className: "bg-green-600 text-white border-green-600",
+            });
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to add item to cart. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setAdding(false);
+        }
     };
 
     const averageRating = reviews.length > 0
@@ -131,7 +159,7 @@ export default function ProductDetail() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="flex items-center justify-center h-[60vh]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -142,7 +170,7 @@ export default function ProductDetail() {
 
     if (!product) {
         return (
-            <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="max-w-4xl mx-auto px-4 py-20 text-center">
                     <Package className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -161,7 +189,7 @@ export default function ProductDetail() {
     const displayImage = product.image_url || product.images?.[0];
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-emerald-50/80 to-white">
+        <div className="min-h-screen bg-grass-pattern">
             <NavBar />
 
             <main className="max-w-6xl mx-auto px-4 py-4">

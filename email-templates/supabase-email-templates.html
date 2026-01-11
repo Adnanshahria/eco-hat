@@ -1,0 +1,318 @@
+<!-- 
+  SUPABASE EMAIL TEMPLATES FOR ECOHAAT
+  Copy each template into Supabase Dashboard > Authentication > Email Templates
+  Variables: {{ .Token }} = OTP code, {{ .SiteURL }} = your site URL
+-->
+
+<!-- ============================================== -->
+<!-- 1. CONFIRM SIGNUP (Email Confirmation OTP)    -->
+<!-- ============================================== -->
+<!-- Subject: Your EcoHaat Verification Code: {{ .Token }} -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0fdf4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background-color: #f0fdf4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width: 480px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌱 EcoHaat</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Sustainable
+                                Living, Locally Sourced</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <h2
+                                style="margin: 0 0 16px; color: #15803d; font-size: 22px; font-weight: 600; text-align: center;">
+                                Welcome to EcoHaat! 🎉</h2>
+                            <p
+                                style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center;">
+                                Thank you for joining our eco-friendly community. Please verify your email address using
+                                the code below:
+                            </p>
+                            <!-- OTP Box -->
+                            <div
+                                style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                                <p
+                                    style="margin: 0 0 8px; color: #16a34a; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                                    Your Verification Code</p>
+                                <p
+                                    style="margin: 0; color: #15803d; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                    {{ .Token }}</p>
+                            </div>
+                            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                This code expires in <strong>60 minutes</strong>.<br>
+                                If you didn't create an account, please ignore this email.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px 32px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                © 2026 EcoHaat. Making sustainable living accessible.<br>
+                                <a href="{{ .SiteURL }}" style="color: #16a34a; text-decoration: none;">Visit
+                                    EcoHaat</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
+
+
+<!-- ============================================== -->
+<!-- 2. MAGIC LINK / LOGIN WITH OTP                -->
+<!-- ============================================== -->
+<!-- Subject: Your EcoHaat Login Code: {{ .Token }} -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0fdf4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background-color: #f0fdf4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width: 480px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #16a34a 0%, #22c55e 100%); padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌱 EcoHaat</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Sustainable
+                                Living, Locally Sourced</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <h2
+                                style="margin: 0 0 16px; color: #15803d; font-size: 22px; font-weight: 600; text-align: center;">
+                                Login to EcoHaat 🔐</h2>
+                            <p
+                                style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center;">
+                                Use the code below to securely sign in to your account:
+                            </p>
+                            <!-- OTP Box -->
+                            <div
+                                style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                                <p
+                                    style="margin: 0 0 8px; color: #16a34a; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                                    Your Login Code</p>
+                                <p
+                                    style="margin: 0; color: #15803d; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                    {{ .Token }}</p>
+                            </div>
+                            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                This code expires in <strong>10 minutes</strong>.<br>
+                                If you didn't request this, please secure your account.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px 32px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                © 2026 EcoHaat. Making sustainable living accessible.<br>
+                                <a href="{{ .SiteURL }}" style="color: #16a34a; text-decoration: none;">Visit
+                                    EcoHaat</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
+
+
+<!-- ============================================== -->
+<!-- 3. PASSWORD RESET OTP                         -->
+<!-- ============================================== -->
+<!-- Subject: Reset Your EcoHaat Password - Code: {{ .Token }} -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0fdf4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background-color: #f0fdf4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width: 480px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%); padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌱 EcoHaat</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Password Reset
+                                Request</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <h2
+                                style="margin: 0 0 16px; color: #dc2626; font-size: 22px; font-weight: 600; text-align: center;">
+                                Reset Your Password 🔑</h2>
+                            <p
+                                style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center;">
+                                We received a request to reset your password. Use the code below to proceed:
+                            </p>
+                            <!-- OTP Box -->
+                            <div
+                                style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                                <p
+                                    style="margin: 0 0 8px; color: #dc2626; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                                    Your Reset Code</p>
+                                <p
+                                    style="margin: 0; color: #b91c1c; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                    {{ .Token }}</p>
+                            </div>
+                            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                This code expires in <strong>60 minutes</strong>.<br>
+                                If you didn't request a password reset, please ignore this email and your password will
+                                remain unchanged.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Security Notice -->
+                    <tr>
+                        <td style="padding: 0 32px 24px;">
+                            <div
+                                style="background-color: #fef3c7; border-radius: 8px; padding: 12px 16px; border-left: 4px solid #f59e0b;">
+                                <p style="margin: 0; color: #92400e; font-size: 12px;">
+                                    ⚠️ <strong>Security Tip:</strong> Never share this code with anyone. EcoHaat staff
+                                    will never ask for your password or OTP.
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px 32px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                © 2026 EcoHaat. Making sustainable living accessible.<br>
+                                <a href="{{ .SiteURL }}" style="color: #16a34a; text-decoration: none;">Visit
+                                    EcoHaat</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>
+
+
+<!-- ============================================== -->
+<!-- 4. CHANGE EMAIL ADDRESS                       -->
+<!-- ============================================== -->
+<!-- Subject: Confirm Your New Email - Code: {{ .Token }} -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body
+    style="margin: 0; padding: 0; background-color: #f0fdf4; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+        style="background-color: #f0fdf4; padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width: 480px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td
+                            style="background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%); padding: 32px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">🌱 EcoHaat</h1>
+                            <p style="margin: 8px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">Email Change
+                                Request</p>
+                        </td>
+                    </tr>
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px 32px;">
+                            <h2
+                                style="margin: 0 0 16px; color: #2563eb; font-size: 22px; font-weight: 600; text-align: center;">
+                                Confirm Your New Email ✉️</h2>
+                            <p
+                                style="margin: 0 0 24px; color: #4b5563; font-size: 15px; line-height: 1.6; text-align: center;">
+                                Use the code below to confirm your new email address:
+                            </p>
+                            <!-- OTP Box -->
+                            <div
+                                style="background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0;">
+                                <p
+                                    style="margin: 0 0 8px; color: #2563eb; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                                    Your Confirmation Code</p>
+                                <p
+                                    style="margin: 0; color: #1d4ed8; font-size: 36px; font-weight: 700; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                    {{ .Token }}</p>
+                            </div>
+                            <p style="margin: 24px 0 0; color: #6b7280; font-size: 13px; text-align: center;">
+                                This code expires in <strong>60 minutes</strong>.<br>
+                                If you didn't request this change, please contact support immediately.
+                            </p>
+                        </td>
+                    </tr>
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 24px 32px; border-top: 1px solid #e5e7eb;">
+                            <p style="margin: 0; color: #9ca3af; font-size: 12px; text-align: center;">
+                                © 2026 EcoHaat. Making sustainable living accessible.<br>
+                                <a href="{{ .SiteURL }}" style="color: #16a34a; text-decoration: none;">Visit
+                                    EcoHaat</a>
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

@@ -117,11 +117,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (existing) {
             await updateQuantity(productId, existing.quantity + quantity);
         } else {
-            await supabase.from("cart_items").insert({
+            const { error } = await supabase.from("cart_items").insert({
                 user_id: userId,
                 product_id: productId,
                 quantity,
             });
+            if (error) {
+                console.error("Error adding to cart:", error);
+                throw error;
+            }
             await refreshCart();
         }
     };

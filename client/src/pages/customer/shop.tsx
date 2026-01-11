@@ -71,7 +71,7 @@ export default function CustomerShop() {
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/30">
+        <div className="min-h-screen bg-grass-pattern">
             {/* Header */}
             <NavBar onSearch={setSearchQuery} />
 

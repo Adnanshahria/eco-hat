@@ -42,7 +42,7 @@ export default function OrderConfirmation() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center">
                 <p className="text-muted-foreground">Loading...</p>
             </div>
         );
@@ -50,7 +50,7 @@ export default function OrderConfirmation() {
 
     if (!order) {
         return (
-            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+            <div className="min-h-screen bg-grass-pattern flex items-center justify-center p-4">
                 <div className="text-center">
                     <h2 className="text-xl font-semibold mb-2">Order not found</h2>
                     <Link href="/shop">
@@ -62,7 +62,7 @@ export default function OrderConfirmation() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-primary/5 to-background">
+        <div className="min-h-screen bg-grass-pattern">
             <div className="max-w-lg mx-auto px-4 py-16">
                 <motion.div
                     initial={{ scale: 0 }}

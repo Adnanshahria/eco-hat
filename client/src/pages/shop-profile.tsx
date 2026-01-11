@@ -95,7 +95,7 @@ export default function ShopProfile() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="flex justify-center items-center h-[60vh]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -106,7 +106,7 @@ export default function ShopProfile() {
 
     if (!shop) {
         return (
-            <div className="min-h-screen bg-background">
+            <div className="min-h-screen bg-grass-pattern">
                 <NavBar />
                 <div className="max-w-4xl mx-auto px-4 py-20 text-center">
                     <Store className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
@@ -121,7 +121,7 @@ export default function ShopProfile() {
     const shopBadge = shop.shop_type ? getShopTypeBadge(shop.shop_type) : null;
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-grass-pattern">
             <NavBar />
 
             {/* Shop Header - Daraz Style */}
@@ -131,7 +131,7 @@ export default function ShopProfile() {
                         {/* Shop Avatar */}
                         <div className="h-16 w-16 rounded-full border-2 border-primary/20 bg-emerald-100 flex items-center justify-center overflow-hidden shrink-0">
                             {shop.avatar_url ? (
-                                <img src={shop.avatar_url} alt={shop.shop_name || shop.username} className="w-full h-full object-cover" />
+                                <img src={shop.avatar_url} alt={shop.username} className="w-full h-full object-cover" />
                             ) : (
                                 <Store className="h-8 w-8 text-primary" />
                             )}
@@ -140,7 +140,7 @@ export default function ShopProfile() {
                         {/* Shop Info */}
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-xl font-bold truncate">{shop.shop_name || shop.username}</h1>
+                                <h1 className="text-xl font-bold truncate">{shop.username}</h1>
                                 {shopBadge && (
                                     <span className={`${shopBadge.color} text-white px-2 py-0.5 rounded text-xs font-medium`}>
                                         {shopBadge.icon} {shop.shop_type}

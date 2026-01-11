@@ -1,12 +1,243 @@
 import { useState, useEffect } from "react";
+import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu } from "lucide-react";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/components/notifications";
 import { AppLink as Link } from "@/components/app-link";
+
+// Send Notification Section Component
+function SendNotificationSection({ users }: { users: User[] }) {
+    const [mode, setMode] = useState<"single" | "batch">("single");
+    const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+    const [roleFilter, setRoleFilter] = useState<string>("all");
+    const [searchQuery, setSearchQuery] = useState("");
+    const [title, setTitle] = useState("");
+    const [message, setMessage] = useState("");
+    const [notifType, setNotifType] = useState<"info" | "success" | "warning" | "error">("info");
+    const [sending, setSending] = useState(false);
+    const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+
+    const filteredUsers = users.filter(u => {
+        const matchesRole = roleFilter === "all" || u.role === roleFilter;
+        const matchesSearch = u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            u.email.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesRole && matchesSearch;
+    });
+
+    const selectedUser = users.find(u => u.id === selectedUserId);
+    const batchTargets = roleFilter === "all" ? users : users.filter(u => u.role === roleFilter);
+
+    const handleSend = async () => {
+        if (!title.trim() || !message.trim()) {
+            setResult({ ok: false, text: "Please fill in title & message" });
+            return;
+        }
+
+        if (mode === "single" && !selectedUserId) {
+            setResult({ ok: false, text: "Please select a user" });
+            return;
+        }
+
+        setSending(true);
+        setResult(null);
+
+        try {
+            if (mode === "single") {
+                // Single user notification
+                await createNotification(selectedUserId!, title, message, notifType);
+
+                fetch("/api/notifications/admin/send", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: selectedUser?.email, title, message, type: notifType })
+                }).catch(err => console.warn("Email failed:", err));
+
+                setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
+            } else {
+                // Batch notification to all filtered users
+                let successCount = 0;
+                for (const user of batchTargets) {
+                    try {
+                        await createNotification(user.id, title, message, notifType);
+
+                        fetch("/api/notifications/admin/send", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ email: user.email, title, message, type: notifType })
+                        }).catch(() => { });
+
+                        successCount++;
+                    } catch {
+                        console.warn(`Failed for ${user.email}`);
+                    }
+                }
+                setResult({ ok: true, text: `✅ Notification sent to ${successCount} users!` });
+            }
+
+            setTitle("");
+            setMessage("");
+            setSelectedUserId(null);
+        } catch (err: any) {
+            setResult({ ok: false, text: err.message || "Failed to send notification" });
+        } finally {
+            setSending(false);
+        }
+    };
+
+    return (
+        <div className="bg-card rounded-xl border p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Bell className="h-5 w-5 text-primary" /> Send Notification
+                </h3>
+                <div className="flex gap-1 bg-muted rounded-lg p-1">
+                    <button
+                        onClick={() => setMode("single")}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition ${mode === "single" ? "bg-background shadow" : ""}`}
+                    >
+                        Single User
+                    </button>
+                    <button
+                        onClick={() => setMode("batch")}
+                        className={`px-3 py-1.5 rounded text-xs font-medium transition ${mode === "batch" ? "bg-background shadow" : ""}`}
+                    >
+                        Batch Send
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+                {/* User Selection */}
+                <div className="space-y-4">
+                    {mode === "batch" && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-sm text-yellow-800">
+                            <strong>Batch Mode:</strong> Send to {batchTargets.length} user{batchTargets.length !== 1 ? "s" : ""}
+                            {roleFilter !== "all" ? ` (role: ${roleFilter})` : " (all roles)"}
+                        </div>
+                    )}
+
+                    <div className="flex gap-2">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search users..."
+                                value={searchQuery}
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="pl-9"
+                                disabled={mode === "batch"}
+                            />
+                        </div>
+                        <select
+                            className="border rounded-lg px-3 py-2 text-sm bg-background"
+                            value={roleFilter}
+                            onChange={e => setRoleFilter(e.target.value)}
+                        >
+                            <option value="all">All Roles</option>
+                            <option value="buyer">Buyers</option>
+                            <option value="seller">Sellers</option>
+                            <option value="uv-seller">Unverified Sellers</option>
+                            <option value="admin">Admins</option>
+                        </select>
+                    </div>
+
+                    {mode === "single" && (
+                        <>
+                            <div className="border rounded-lg max-h-48 overflow-auto">
+                                {filteredUsers.length === 0 ? (
+                                    <div className="p-4 text-center text-muted-foreground text-sm">No users found</div>
+                                ) : filteredUsers.slice(0, 20).map(u => (
+                                    <div
+                                        key={u.id}
+                                        onClick={() => setSelectedUserId(u.id)}
+                                        className={`p-3 border-b last:border-b-0 cursor-pointer flex items-center justify-between transition ${selectedUserId === u.id ? "bg-primary/10" : "hover:bg-muted/50"}`}
+                                    >
+                                        <div>
+                                            <p className="font-medium text-sm">{u.username}</p>
+                                            <p className="text-xs text-muted-foreground">{u.email}</p>
+                                        </div>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${u.role === 'admin' ? 'bg-red-100 text-red-700' :
+                                            u.role === 'seller' ? 'bg-blue-100 text-blue-700' :
+                                                u.role === 'uv-seller' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                            }`}>
+                                            {u.role}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                            {selectedUser && (
+                                <div className="bg-primary/10 rounded-lg p-3 text-sm">
+                                    <span className="text-muted-foreground">Sending to: </span>
+                                    <span className="font-medium text-primary">{selectedUser.username}</span>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+
+                {/* Notification Form */}
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Title</label>
+                        <Input
+                            placeholder="Notification title"
+                            value={title}
+                            onChange={e => setTitle(e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Message</label>
+                        <textarea
+                            placeholder="Write your message here..."
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            className="w-full border rounded-lg p-3 text-sm bg-background resize-none h-24"
+                        />
+                    </div>
+                    <div>
+                        <label className="text-sm font-medium block mb-1.5">Type</label>
+                        <div className="flex gap-2">
+                            {(["info", "success", "warning", "error"] as const).map(t => (
+                                <button
+                                    key={t}
+                                    onClick={() => setNotifType(t)}
+                                    className={`flex-1 py-2 rounded-lg text-xs font-medium capitalize transition ${notifType === t
+                                        ? t === "info" ? "bg-blue-500 text-white" :
+                                            t === "success" ? "bg-green-500 text-white" :
+                                                t === "warning" ? "bg-yellow-500 text-white" :
+                                                    "bg-red-500 text-white"
+                                        : "bg-muted hover:bg-muted/80"
+                                        }`}
+                                >
+                                    {t}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {result && (
+                        <div className={`p-3 rounded-lg text-sm ${result.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                            {result.text}
+                        </div>
+                    )}
+
+                    <Button
+                        onClick={handleSend}
+                        disabled={sending || !title || !message || (mode === "single" && !selectedUserId)}
+                        className="w-full gap-2"
+                    >
+                        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                        {sending ? "Sending..." : mode === "batch" ? `Send to ${batchTargets.length} Users` : "Send Notification"}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 interface User {
     id: number;
@@ -43,7 +274,17 @@ interface Stats {
     pendingProductVerifications: number;
 }
 
-// ... existing statusConfig ...
+const statusConfig: Record<string, { label: string; color: string; next?: string }> = {
+    pending: { label: "Pending", color: "bg-yellow-100 text-yellow-700", next: "confirmed" },
+    confirmed: { label: "Confirmed", color: "bg-blue-100 text-blue-700", next: "processing" },
+    processing: { label: "Processing", color: "bg-purple-100 text-purple-700", next: "shipped" },
+    shipped: { label: "Shipped", color: "bg-indigo-100 text-indigo-700", next: "at_station" },
+    at_station: { label: "At Station", color: "bg-cyan-100 text-cyan-700", next: "reached_destination" },
+    reached_destination: { label: "Reached Destination", color: "bg-teal-100 text-teal-700" },
+    delivered: { label: "Delivered", color: "bg-green-100 text-green-700" },
+    cancelled: { label: "Cancelled", color: "bg-red-100 text-red-700" },
+    denied: { label: "Denied", color: "bg-red-100 text-red-700" },
+};
 
 export default function AdminDashboard() {
     const { user, signOut } = useAuth();
@@ -55,11 +296,36 @@ export default function AdminDashboard() {
     const [currentUser, setCurrentUser] = useState<User | null>(null);
     const [stats, setStats] = useState<Stats>({ totalUsers: 0, totalProducts: 0, totalOrders: 0, totalSellers: 0, totalAdmins: 0, pendingVerifications: 0, pendingProductVerifications: 0 });
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"users" | "admins" | "products" | "orders" | "seller-verifications" | "product-verifications" | "tracking">("seller-verifications");
+
+    // Check URL for specific routes
+    const [, overviewMatch] = useRoute("/admin");
+    const [, sellersMatch] = useRoute("/admin/sellers");
+    const [, productsMatch] = useRoute("/admin/products");
+    const [, usersMatch] = useRoute("/admin/users");
+    const [, ordersMatch] = useRoute("/admin/orders");
+    const [, adminsMatch] = useRoute("/admin/admins");
+
+    type TabType = "overview" | "users" | "admins" | "products" | "orders" | "seller-verifications" | "product-verifications" | "tracking";
+
+    const getActiveTab = (): TabType => {
+        if (sellersMatch) return "seller-verifications";
+        if (productsMatch) return "product-verifications";
+        if (usersMatch) return "users";
+        if (ordersMatch) return "tracking";
+        if (adminsMatch) return "admins";
+        return "overview";
+    };
+
+    const [activeTab, setActiveTab] = useState<TabType>(getActiveTab());
+
+    useEffect(() => {
+        setActiveTab(getActiveTab());
+    }, [overviewMatch, sellersMatch, productsMatch, usersMatch, ordersMatch, adminsMatch]);
     const [inviteEmail, setInviteEmail] = useState("");
     const [inviteLoading, setInviteLoading] = useState(false);
     const [inviteMsg, setInviteMsg] = useState<{ ok: boolean; text: string } | null>(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [orderStatusFilter, setOrderStatusFilter] = useState<string>("all");
 
     const isSuperAdmin = currentUser?.is_super_admin || false;
 
@@ -102,7 +368,7 @@ export default function AdminDashboard() {
         const { data: itemsData } = await supabase
             .from("order_items")
             .select(`
-                id, quantity, price_at_purchase, item_status,
+                id, quantity, price_at_purchase, item_status, payment_received, payment_sent_to_seller,
                 order:orders (id, order_number, status, phone, shipping_address, created_at, buyer:users!orders_buyer_id_fkey(id, username, email)),
                 product:products (id, name, images),
                 seller:users!order_items_seller_id_fkey (id, username, email, shop_location)
@@ -149,10 +415,77 @@ export default function AdminDashboard() {
             await createNotification(
                 buyerId,
                 "Order Update",
-                `Your order #${orderId} is now ${statusConfig[newStatus]?.label || newStatus}.`,
+                `Your order #${orderId} is now ${newStatus}.`,
                 "info"
             );
         }
+    };
+
+    const updateItemStatus = async (itemId: number, newStatus: string, orderId?: number) => {
+        await supabase.from("order_items").update({ item_status: newStatus }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, item_status: newStatus } : i));
+
+        // Update tracking history and notify buyer (in-app + email)
+        if (orderId) {
+            const { data: orderData } = await supabase.from("orders").select("tracking_history, buyer_id, order_number").eq("id", orderId).single();
+            if (orderData) {
+                const history = orderData.tracking_history || [];
+                const statusMessages: Record<string, string> = {
+                    at_station: "📍 Your package has arrived at the delivery station",
+                    reached_destination: "🎉 Your package has reached your area and is ready for delivery!",
+                    delivered: "✅ Order has been delivered successfully!",
+                    cancelled: "❌ Order has been cancelled by admin",
+                };
+                const note = statusMessages[newStatus] || `Order status updated to ${newStatus}`;
+                history.push({ status: newStatus, timestamp: new Date().toISOString(), note });
+                await supabase.from("orders").update({ tracking_history: history, status: newStatus }).eq("id", orderId);
+
+                // Notify buyer (in-app)
+                if (orderData.buyer_id) {
+                    await createNotification(
+                        orderData.buyer_id,
+                        `📦 Delivery Update`,
+                        note,
+                        "info"
+                    );
+
+                    // Send email to buyer
+                    const { data: buyerData } = await supabase.from("users").select("email").eq("id", orderData.buyer_id).single();
+                    if (buyerData?.email) {
+                        fetch("/api/notifications/order-status", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                email: buyerData.email,
+                                orderId,
+                                orderNumber: orderData.order_number || orderId,
+                                status: newStatus,
+                                note
+                            }),
+                        }).catch(err => console.error("Failed to send buyer email:", err));
+                    }
+                }
+            }
+        }
+    };
+
+    // Payment tracking functions
+    const markPaymentReceived = async (itemId: number) => {
+        await supabase.from("order_items").update({ payment_received: true }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, payment_received: true } : i));
+    };
+
+    const markPaymentSentToSeller = async (itemId: number, sellerId: number, orderNumber: string, amount: number) => {
+        await supabase.from("order_items").update({ payment_sent_to_seller: true }).eq("id", itemId);
+        setOrderItems(orderItems.map(i => i.id === itemId ? { ...i, payment_sent_to_seller: true } : i));
+
+        // Notify seller
+        await createNotification(
+            sellerId,
+            "💰 Payment Received!",
+            `Payment of ৳${amount.toFixed(0)} for order #${orderNumber} has been sent to your account.`,
+            "success"
+        );
     };
 
     // ... inside component ...
@@ -249,7 +582,7 @@ export default function AdminDashboard() {
     const nonAdmins = users.filter(u => u.role !== "admin");
 
     return (
-        <div className="min-h-screen bg-background flex flex-col lg:flex-row">
+        <div className="min-h-screen bg-grass-pattern flex flex-col lg:flex-row">
             {/* Mobile Header - Logo only */}
             <header className="lg:hidden sticky top-0 z-50 bg-card border-b border-border p-3 flex items-center justify-center gap-2">
                 <Link href="/"><img src={`${import.meta.env.BASE_URL}logo-en.png`} alt="EcoHaat" className="h-8 cursor-pointer" /></Link>
@@ -268,24 +601,21 @@ export default function AdminDashboard() {
                 </div>
                 <nav className="space-y-1 flex-1">
                     {[
-                        { id: "seller-verifications", icon: Users, label: "Seller Verifications", count: stats.pendingVerifications },
-                        { id: "product-verifications", icon: Shield, label: "Product Verifications", count: stats.pendingProductVerifications },
-                        { id: "tracking", icon: Truck, label: "Order Tracking" },
-                        { id: "users", icon: Users, label: "Users" },
-                        ...(isSuperAdmin ? [{ id: "admins", icon: Crown, label: "Manage Admins" }] : []),
-                        { id: "products", icon: Package, label: "All Products" },
-                        { id: "orders", icon: ShoppingCart, label: "Orders" },
+                        { id: "overview", route: "/admin", icon: LayoutDashboard, label: "Overview" },
+                        { id: "seller-verifications", route: "/admin/sellers", icon: Users, label: "Seller Verifications", count: stats.pendingVerifications },
+                        { id: "product-verifications", route: "/admin/products", icon: Shield, label: "Product Verifications", count: stats.pendingProductVerifications },
+                        { id: "users", route: "/admin/users", icon: Users, label: "Users" },
+                        ...(isSuperAdmin ? [{ id: "admins", route: "/admin/admins", icon: Crown, label: "Manage Admins" }] : []),
+                        { id: "tracking", route: "/admin/orders", icon: ShoppingCart, label: "Orders" },
                     ].map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setActiveTab(t.id as any)}
-                            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition ${activeTab === t.id ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted text-muted-foreground"}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <t.icon className="h-4 w-4" /> {t.label}
+                        <Link key={t.id} href={t.route}>
+                            <div className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition cursor-pointer ${activeTab === t.id || (t.id === "tracking" && activeTab === "orders") ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted text-muted-foreground"}`}>
+                                <div className="flex items-center gap-3">
+                                    <t.icon className="h-4 w-4" /> {t.label}
+                                </div>
+                                {t.count ? <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{t.count}</span> : null}
                             </div>
-                            {t.count ? <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{t.count}</span> : null}
-                        </button>
+                        </Link>
                     ))}
                 </nav>
                 <Button variant="ghost" size="sm" onClick={signOut} className="justify-start gap-2 mt-4 text-red-500 hover:text-red-600 hover:bg-red-50"><LogOut className="h-4 w-4" /> Logout</Button>
@@ -295,27 +625,48 @@ export default function AdminDashboard() {
             <main className="flex-1 p-4 lg:p-8 overflow-auto pb-20 lg:pb-8">
                 <div className="max-w-6xl mx-auto">
                     <header className="mb-6 lg:mb-8">
-                        <h1 className="text-2xl font-bold mb-2">Dashboard Overview</h1>
-                        <p className="text-muted-foreground">Manage your marketplace, approve sellers, and track orders.</p>
+                        <h1 className="text-2xl font-bold mb-2">
+                            {activeTab === "overview" && "Dashboard Overview"}
+                            {activeTab === "seller-verifications" && "Seller Verifications"}
+                            {activeTab === "product-verifications" && "Product Verifications"}
+                            {activeTab === "users" && "User Management"}
+                            {activeTab === "admins" && "Manage Admins"}
+                            {activeTab === "tracking" && "Order Tracking"}
+                        </h1>
+                        <p className="text-muted-foreground">
+                            {activeTab === "overview" && "Manage your marketplace, approve sellers, and track orders."}
+                            {activeTab === "seller-verifications" && "Review and approve seller registration requests."}
+                            {activeTab === "product-verifications" && "Review and approve new product listings."}
+                            {activeTab === "users" && "View and manage all registered users."}
+                            {activeTab === "admins" && "Add or remove admin privileges."}
+                            {activeTab === "tracking" && "Track and manage all orders."}
+                        </p>
                     </header>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-                        {[
-                            { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
-                            { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
-                            { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
-                            { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
-                            { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
-                        ].map((s, i) => (
-                            <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
-                                <div className="flex items-center gap-4">
-                                    <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
-                                    <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                    {/* Stats - Only on Overview Tab */}
+                    {activeTab === "overview" && (
+                        <>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                                {[
+                                    { label: "Pending Sellers", value: stats.pendingVerifications, icon: Users, color: "bg-orange-100 text-orange-600" },
+                                    { label: "Pending Products", value: stats.pendingProductVerifications, icon: Shield, color: "bg-yellow-100 text-yellow-600" },
+                                    { label: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-100 text-blue-600" },
+                                    { label: "Total Orders", value: stats.totalOrders, icon: ShoppingCart, color: "bg-green-100 text-green-600" },
+                                    { label: "Active Products", value: stats.totalProducts, icon: Package, color: "bg-purple-100 text-purple-600" },
+                                ].map((s, i) => (
+                                    <motion.div key={s.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="bg-card rounded-xl border p-4">
+                                        <div className="flex items-center gap-4">
+                                            <div className={`h-12 w-12 rounded-full flex items-center justify-center ${s.color}`}><s.icon className="h-5 w-5" /></div>
+                                            <div><p className="text-sm text-muted-foreground">{s.label}</p><p className="text-2xl font-bold">{s.value}</p></div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </div>
+
+                            {/* Send Notification Section */}
+                            <SendNotificationSection users={users} />
+                        </>
+                    )}
 
                     {/* Product Verifications Tab */}
                     {activeTab === "product-verifications" && (
@@ -364,94 +715,139 @@ export default function AdminDashboard() {
                     )}
 
                     {/* Order Tracking Tab */}
-                    {activeTab === "tracking" && (
-                        <div className="space-y-6">
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-bold flex items-center gap-2"><Truck className="h-5 w-5" /> Order Tracking</h2>
-                                <span className="text-sm text-muted-foreground">{orderItems.length} items</span>
-                            </div>
+                    {activeTab === "tracking" && (() => {
+                        const filteredItems = orderStatusFilter === "all"
+                            ? orderItems
+                            : orderItems.filter(i => (i.item_status || i.order?.status || "pending") === orderStatusFilter);
 
-                            <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead className="bg-muted/50 text-left">
-                                            <tr>
-                                                <th className="p-3 font-medium text-muted-foreground">Order #</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Product</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Buyer</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Delivery Location</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Seller</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Date</th>
-                                                <th className="p-3 font-medium text-muted-foreground">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {orderItems.length === 0 ? (
-                                                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders found</td></tr>
-                                            ) : orderItems.map((item: any) => {
-                                                const statusColors: Record<string, string> = {
-                                                    pending: "bg-yellow-100 text-yellow-800",
-                                                    confirmed: "bg-blue-100 text-blue-800",
-                                                    processing: "bg-purple-100 text-purple-800",
-                                                    shipped: "bg-indigo-100 text-indigo-800",
-                                                    delivered: "bg-green-100 text-green-800",
-                                                    denied: "bg-red-100 text-red-800",
-                                                };
-                                                const status = item.item_status || item.order?.status || "pending";
-                                                const address = item.order?.shipping_address;
+                        return (
+                            <div className="space-y-6">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                    <h2 className="text-xl font-bold flex items-center gap-2"><Truck className="h-5 w-5" /> Order Tracking</h2>
+                                    <div className="flex items-center gap-3">
+                                        <select
+                                            className="text-sm border rounded-lg px-3 py-2 bg-background"
+                                            value={orderStatusFilter}
+                                            onChange={(e) => setOrderStatusFilter(e.target.value)}
+                                        >
+                                            <option value="all">All Status ({orderItems.length})</option>
+                                            <option value="pending">🕐 Pending</option>
+                                            <option value="confirmed">✓ Confirmed</option>
+                                            <option value="processing">⚙️ Processing</option>
+                                            <option value="shipped">🚚 Shipped</option>
+                                            <option value="at_station">📍 At Station</option>
+                                            <option value="reached_destination">🎯 Reached Destination</option>
+                                            <option value="delivered">✅ Delivered</option>
+                                            <option value="cancelled">❌ Cancelled</option>
+                                        </select>
+                                        <span className="text-sm text-muted-foreground">{filteredItems.length} items</span>
+                                    </div>
+                                </div>
 
-                                                return (
-                                                    <tr key={item.id} className="border-t hover:bg-muted/20 transition">
-                                                        <td className="p-3">
-                                                            <div className="font-mono font-bold text-emerald-700">#{item.order?.order_number || item.order?.id}</div>
-                                                            <div className="text-xs text-muted-foreground">Item #{item.id}</div>
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="flex items-center gap-2">
-                                                                {item.product?.images?.[0] && (
-                                                                    <img src={item.product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
+                                <div className="bg-card border rounded-xl overflow-hidden shadow-sm">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead className="bg-muted/50 text-left">
+                                                <tr>
+                                                    <th className="p-3 font-medium text-muted-foreground">Order #</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Product</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Buyer</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Seller</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Earning</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Status</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Buyer Paid</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Seller Paid</th>
+                                                    <th className="p-3 font-medium text-muted-foreground">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {orderItems.length === 0 ? (
+                                                    <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders found</td></tr>
+                                                ) : filteredItems.map((item: any) => {
+                                                    const statusColors: Record<string, string> = {
+                                                        pending: "bg-yellow-100 text-yellow-800",
+                                                        confirmed: "bg-blue-100 text-blue-800",
+                                                        processing: "bg-purple-100 text-purple-800",
+                                                        shipped: "bg-indigo-100 text-indigo-800",
+                                                        delivered: "bg-green-100 text-green-800",
+                                                        denied: "bg-red-100 text-red-800",
+                                                    };
+                                                    const status = item.item_status || item.order?.status || "pending";
+                                                    const address = item.order?.shipping_address;
+
+                                                    return (
+                                                        <tr key={item.id} className="border-t hover:bg-muted/20 transition">
+                                                            <td className="p-3">
+                                                                <div className="font-mono font-bold text-emerald-700">#{item.order?.order_number || item.order?.id}</div>
+                                                                <div className="text-xs text-muted-foreground">Item #{item.id}</div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="flex items-center gap-2">
+                                                                    {item.product?.images?.[0] && (
+                                                                        <img src={item.product.images[0]} alt="" className="w-10 h-10 rounded object-cover" />
+                                                                    )}
+                                                                    <div>
+                                                                        <div className="font-medium">{item.product?.name || "Unknown"}</div>
+                                                                        <div className="text-xs text-muted-foreground">×{item.quantity}</div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
+                                                                <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="font-medium">{item.seller?.username || "—"}</div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <div className="font-bold text-green-600">৳{item.price_at_purchase * item.quantity}</div>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
+                                                                    {status.replace(/_/g, " ")}
+                                                                </span>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                {item.payment_received ? (
+                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ Received</span>
+                                                                ) : status === "delivered" ? (
+                                                                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => markPaymentReceived(item.id)}>💵 Mark Received</Button>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground">Pending</span>
                                                                 )}
-                                                                <div>
-                                                                    <div className="font-medium">{item.product?.name || "Unknown"}</div>
-                                                                    <div className="text-xs text-muted-foreground">×{item.quantity}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="font-medium">{item.order?.buyer?.username || "—"}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.order?.buyer?.email}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.order?.phone}</div>
-                                                        </td>
-                                                        <td className="p-3 max-w-[200px]">
-                                                            {address ? (
-                                                                <div className="text-xs">
-                                                                    <div className="font-medium">{address.fullName}</div>
-                                                                    <div>{address.address}</div>
-                                                                    <div>{address.district}, {address.division}</div>
-                                                                </div>
-                                                            ) : <span className="text-muted-foreground">—</span>}
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <div className="font-medium">{item.seller?.username || "—"}</div>
-                                                            <div className="text-xs text-muted-foreground">{item.seller?.shop_location}</div>
-                                                        </td>
-                                                        <td className="p-3 text-xs">
-                                                            {item.order?.created_at ? new Date(item.order.created_at).toLocaleDateString() : "—"}
-                                                        </td>
-                                                        <td className="p-3">
-                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium capitalize ${statusColors[status] || "bg-gray-100"}`}>
-                                                                {status}
-                                                            </span>
-                                                        </td>
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
+                                                            </td>
+                                                            <td className="p-3">
+                                                                {item.payment_sent_to_seller ? (
+                                                                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">✓ Paid</span>
+                                                                ) : item.payment_received ? (
+                                                                    <Button size="sm" variant="outline" className="h-7 text-xs bg-blue-50" onClick={() => markPaymentSentToSeller(item.id, item.seller?.id, item.order?.order_number || String(item.order?.id), item.price_at_purchase * item.quantity)}>💸 Pay Seller</Button>
+                                                                ) : (
+                                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                                )}
+                                                            </td>
+                                                            <td className="p-3">
+                                                                <select
+                                                                    className="text-xs border rounded px-2 py-1 bg-background"
+                                                                    value={status}
+                                                                    onChange={(e) => updateItemStatus(item.id, e.target.value, item.order?.id)}
+                                                                >
+                                                                    <option value={status}>{statusConfig[status]?.label || status}</option>
+                                                                    {status === "shipped" && <option value="at_station">📍 At Station</option>}
+                                                                    {(status === "shipped" || status === "at_station") && <option value="reached_destination">🎯 Reached Destination</option>}
+                                                                    {(status === "reached_destination" || status === "at_station" || status === "shipped") && <option value="delivered">✅ Mark Delivered</option>}
+                                                                    {status !== "cancelled" && status !== "delivered" && <option value="cancelled">❌ Cancel Order</option>}
+                                                                </select>
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Seller Verifications Tab */}
                     {activeTab === "seller-verifications" && (
@@ -598,8 +994,7 @@ export default function AdminDashboard() {
                                                         <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">Unverified</span>}
                                             </td>
                                             <td className="p-4 text-right">
-                                                {u.role === "buyer" && <Button variant="ghost" size="sm" onClick={() => updateRole(u.id, "seller")}>Make Seller</Button>}
-                                                {u.role === "seller" && <Button variant="ghost" size="sm" onClick={() => updateRole(u.id, "buyer")}>Make Buyer</Button>}
+                                                {/* Role management removed */}
                                             </td>
                                         </tr>
                                     ))}
@@ -608,8 +1003,7 @@ export default function AdminDashboard() {
                         </div>
                     )}
 
-                    {/* Products Tab */}
-                    {activeTab === "products" && <div className="bg-card rounded-xl border p-12 text-center text-muted-foreground">Product management interface coming soon.</div>}
+                    {/* Products Tab - Not needed anymore since products are shown via verifications */}
 
                     {/* Orders Tab */}
                     {activeTab === "orders" && (
@@ -634,29 +1028,35 @@ export default function AdminDashboard() {
                         </div>
                     )}
                 </div>
-            </main>
+            </main >
 
             {/* Mobile Bottom Navigation */}
-            <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom">
-                <div className="flex items-center justify-around px-2 py-2">
+            < nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border z-40 safe-area-inset-bottom" >
+                <div className="flex items-center justify-around px-1 py-2">
                     {[
-                        { id: "seller-verifications", icon: Store, label: "Sellers", count: stats.pendingSellerVerifications },
-                        { id: "product-verifications", icon: Shield, label: "Products", count: stats.pendingProductVerifications },
-                        { id: "users", icon: Users, label: "Users" },
-                        { id: "orders", icon: ShoppingCart, label: "Orders" },
+                        { id: "overview", route: "/admin", icon: LayoutDashboard, label: "Overview" },
+                        { id: "seller-verifications", route: "/admin/sellers", icon: Store, label: "Sellers", count: stats.pendingVerifications },
+                        { id: "product-verifications", route: "/admin/products", icon: Shield, label: "Products", count: stats.pendingProductVerifications },
+                        { id: "users", route: "/admin/users", icon: Users, label: "Users" },
+                        { id: "tracking", route: "/admin/orders", icon: ShoppingCart, label: "Orders" },
                     ].map(t => (
-                        <button
-                            key={t.id}
-                            onClick={() => setActiveTab(t.id as any)}
-                            className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}
-                        >
-                            <t.icon className="h-5 w-5" />
-                            <span className="text-xs font-medium">{t.label}</span>
-                            {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1.5 rounded-full">{t.count}</span> : null}
-                        </button>
+                        <Link key={t.id} href={t.route}>
+                            <div className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg touch-target relative ${activeTab === t.id ? "text-primary" : "text-muted-foreground"}`}>
+                                <t.icon className="h-5 w-5" />
+                                <span className="text-[10px] font-medium">{t.label}</span>
+                                {t.count ? <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] px-1 rounded-full">{t.count}</span> : null}
+                            </div>
+                        </Link>
                     ))}
+                    <button
+                        onClick={signOut}
+                        className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg touch-target text-red-500"
+                    >
+                        <LogOut className="h-5 w-5" />
+                        <span className="text-xs font-medium">Logout</span>
+                    </button>
                 </div>
-            </nav>
-        </div>
+            </nav >
+        </div >
     );
 }
