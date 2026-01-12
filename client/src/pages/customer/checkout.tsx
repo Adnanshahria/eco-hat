@@ -59,18 +59,73 @@ export default function Checkout() {
         setCouponLoading(true);
         setCouponError(null);
         try {
-            const res = await fetch("/api/discount/validate", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ code: couponCode, cartTotal: total })
-            });
-            const data = await res.json();
-            if (data.valid) {
-                setAppliedDiscount(data.discount);
-                setCouponCode("");
-            } else {
-                setCouponError(data.error || "Invalid code");
+            // Fetch discount code from Supabase
+            const { data: discount, error } = await supabase
+                .from("discount_codes")
+                .select("*")
+                .eq("code", couponCode.toUpperCase().trim())
+                .single();
+
+            if (error || !discount) {
+                setCouponError("Invalid discount code");
+                return;
             }
+
+            // Check if active
+            if (!discount.is_active) {
+                setCouponError("This code is no longer active");
+                return;
+            }
+
+            // Check date validity
+            const now = new Date();
+            if (discount.valid_until && new Date(discount.valid_until) < now) {
+                setCouponError("This code has expired");
+                return;
+            }
+
+            // Check max uses
+            if (discount.max_uses && discount.uses_count >= discount.max_uses) {
+                setCouponError("This code has reached its usage limit");
+                return;
+            }
+
+            // Check minimum order amount
+            if (discount.min_order_amount && total < discount.min_order_amount) {
+                setCouponError(`Minimum order amount of ৳${discount.min_order_amount} required`);
+                return;
+            }
+
+            // Calculate discount amount
+            let discountAmount = 0;
+            let discountLabel = "";
+
+            if (discount.discount_type === "percentage") {
+                discountAmount = (total * discount.discount_value) / 100;
+                if (discount.max_discount && discountAmount > discount.max_discount) {
+                    discountAmount = discount.max_discount;
+                    discountLabel = `${discount.discount_value}% off (max ৳${discount.max_discount})`;
+                } else {
+                    discountLabel = `${discount.discount_value}% off`;
+                }
+            } else if (discount.discount_type === "fixed") {
+                discountAmount = Math.min(discount.discount_value, total);
+                discountLabel = `৳${discount.discount_value} off`;
+            } else if (discount.discount_type === "free_shipping") {
+                discountAmount = 0;
+                discountLabel = "Free Shipping";
+            }
+
+            setAppliedDiscount({
+                id: discount.id,
+                code: discount.code,
+                type: discount.discount_type,
+                value: discount.discount_value,
+                discountAmount: Math.round(discountAmount),
+                label: discountLabel,
+                freeShipping: discount.discount_type === "free_shipping"
+            });
+            setCouponCode("");
         } catch (err) {
             setCouponError("Failed to validate code");
         } finally {

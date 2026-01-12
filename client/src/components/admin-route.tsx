@@ -21,9 +21,9 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
             }
 
             try {
-                // Timeout promise to prevent hanging indefinitely
+                // Increased timeout to 15 seconds to handle slow connections
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Admin check timeout")), 5000)
+                    setTimeout(() => reject(new Error("Admin check timeout")), 15000)
                 );
 
                 // Check user role in database - using * since specific column select might be behaving differently
@@ -39,7 +39,8 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
                 if (error || !data) {
                     console.error("Admin check failed or no data:", error);
-                    setIsAuthorized(false);
+                    // On timeout or error, show loading instead of redirecting away
+                    // This prevents logout on slow connections
                     return;
                 }
 
@@ -50,7 +51,8 @@ export function AdminRoute({ children }: { children: React.ReactNode }) {
 
             } catch (err) {
                 console.error("Admin route error:", err);
-                setIsAuthorized(false);
+                // Don't set isAuthorized to false on timeout - just keep loading
+                // This prevents logout on slow connections
             }
         };
 

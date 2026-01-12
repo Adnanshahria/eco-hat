@@ -394,9 +394,12 @@ function DiscountManagementSection() {
     const fetchDiscounts = async () => {
         setLoading(true);
         try {
-            const res = await fetch("/api/admin/discounts");
-            const data = await res.json();
-            if (Array.isArray(data)) setDiscounts(data);
+            const { data, error } = await supabase
+                .from("discount_codes")
+                .select("*")
+                .order("created_at", { ascending: false });
+            if (error) throw error;
+            if (data) setDiscounts(data);
         } catch (err) {
             console.error("Failed to fetch discounts:", err);
         } finally {
@@ -427,31 +430,41 @@ function DiscountManagementSection() {
 
         try {
             const payload = {
-                ...formData,
+                code: formData.code.toUpperCase().trim(),
+                description: formData.description,
+                discount_type: formData.discount_type,
+                discount_value: formData.discount_value || 0,
                 max_discount: formData.max_discount ? Number(formData.max_discount) : null,
+                min_order_amount: formData.min_order_amount || 0,
                 max_uses: formData.max_uses ? Number(formData.max_uses) : null,
-                valid_until: formData.valid_until || null
+                per_user_limit: formData.per_user_limit || 1,
+                valid_until: formData.valid_until || null,
+                is_active: formData.is_active
             };
 
-            const url = editing ? `/api/admin/discounts/${editing.id}` : "/api/admin/discounts";
-            const method = editing ? "PUT" : "POST";
-
-            const res = await fetch(url, {
-                method,
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
-            });
-
-            const data = await res.json();
-            if (res.ok) {
-                setMsg({ ok: true, text: editing ? "Discount updated!" : "Discount created!" });
-                fetchDiscounts();
-                resetForm();
+            if (editing) {
+                const { error } = await supabase
+                    .from("discount_codes")
+                    .update(payload)
+                    .eq("id", editing.id);
+                if (error) throw error;
+                setMsg({ ok: true, text: "Discount updated!" });
             } else {
-                setMsg({ ok: false, text: data.error || "Failed to save" });
+                const { error } = await supabase
+                    .from("discount_codes")
+                    .insert(payload);
+                if (error) {
+                    if (error.code === "23505") {
+                        throw new Error("A code with this name already exists");
+                    }
+                    throw error;
+                }
+                setMsg({ ok: true, text: "Discount created!" });
             }
+            fetchDiscounts();
+            resetForm();
         } catch (err: any) {
-            setMsg({ ok: false, text: err.message });
+            setMsg({ ok: false, text: err.message || "Failed to save" });
         } finally {
             setSaving(false);
         }
@@ -477,7 +490,8 @@ function DiscountManagementSection() {
     const handleDelete = async (id: number) => {
         if (!confirm("Delete this discount code?")) return;
         try {
-            await fetch(`/api/admin/discounts/${id}`, { method: "DELETE" });
+            const { error } = await supabase.from("discount_codes").delete().eq("id", id);
+            if (error) throw error;
             fetchDiscounts();
         } catch (err) {
             console.error("Delete failed:", err);
@@ -485,12 +499,16 @@ function DiscountManagementSection() {
     };
 
     const toggleActive = async (d: DiscountCode) => {
-        await fetch(`/api/admin/discounts/${d.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ is_active: !d.is_active })
-        });
-        fetchDiscounts();
+        try {
+            const { error } = await supabase
+                .from("discount_codes")
+                .update({ is_active: !d.is_active })
+                .eq("id", d.id);
+            if (error) throw error;
+            fetchDiscounts();
+        } catch (err) {
+            console.error("Toggle failed:", err);
+        }
     };
 
     return (
