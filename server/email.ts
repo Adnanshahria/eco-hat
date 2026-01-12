@@ -1,15 +1,106 @@
 import nodemailer from "nodemailer";
+import type { Transporter } from "nodemailer";
 
-// Create reusable transporter
-const transporter = nodemailer.createTransport({
+// ============================================
+// SMTP CONFIGURATION & ERROR HANDLING
+// ============================================
+
+// Configuration check
+const SMTP_CONFIG = {
     host: process.env.SMTP_HOST || "smtp.gmail.com",
     port: parseInt(process.env.SMTP_PORT || "587"),
     secure: false,
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-    },
-});
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.SMTP_FROM,
+};
+
+// Check if SMTP is properly configured
+const isSmtpConfigured = (): boolean => {
+    return !!(SMTP_CONFIG.user && SMTP_CONFIG.pass);
+};
+
+// Log configuration status on startup
+if (!isSmtpConfigured()) {
+    console.error("❌ [SMTP] CRITICAL: SMTP credentials not configured!");
+    console.error("   Required environment variables:");
+    console.error("   - SMTP_USER:", SMTP_CONFIG.user ? "✓ Set" : "✗ Missing");
+    console.error("   - SMTP_PASS:", SMTP_CONFIG.pass ? "✓ Set" : "✗ Missing");
+    console.error("   - SMTP_HOST:", SMTP_CONFIG.host);
+    console.error("   - SMTP_PORT:", SMTP_CONFIG.port);
+    console.error("   📧 All emails will fail until SMTP is configured!");
+} else {
+    console.log("✅ [SMTP] Configuration found for:", SMTP_CONFIG.user);
+}
+
+// Create transporter lazily to allow for connection verification
+let transporter: Transporter | null = null;
+let transporterVerified = false;
+
+async function getTransporter(): Promise<Transporter> {
+    if (!isSmtpConfigured()) {
+        throw new Error("SMTP credentials not configured. Set SMTP_USER and SMTP_PASS environment variables.");
+    }
+
+    if (!transporter) {
+        transporter = nodemailer.createTransport({
+            host: SMTP_CONFIG.host,
+            port: SMTP_CONFIG.port,
+            secure: false,
+            auth: {
+                user: SMTP_CONFIG.user,
+                pass: SMTP_CONFIG.pass,
+            },
+            // Connection timeout settings
+            connectionTimeout: 10000, // 10 seconds
+            greetingTimeout: 10000,
+            socketTimeout: 30000,
+        });
+    }
+
+    // Verify connection on first use
+    if (!transporterVerified) {
+        try {
+            await transporter.verify();
+            console.log("✅ [SMTP] Connection verified successfully");
+            transporterVerified = true;
+        } catch (error) {
+            console.error("❌ [SMTP] Connection verification failed:", error);
+            // Reset transporter so next attempt creates a fresh connection
+            transporter = null;
+            throw new Error(`SMTP connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    }
+
+    return transporter;
+}
+
+// Retry helper with exponential backoff
+async function retryWithBackoff<T>(
+    fn: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelayMs: number = 1000
+): Promise<T> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            return await fn();
+        } catch (error) {
+            lastError = error instanceof Error ? error : new Error(String(error));
+
+            if (attempt < maxRetries) {
+                const delay = baseDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
+                console.warn(`⚠️ [SMTP] Attempt ${attempt}/${maxRetries} failed. Retrying in ${delay}ms...`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                // Reset transporter for retry
+                transporterVerified = false;
+            }
+        }
+    }
+
+    throw lastError;
+}
 
 // ============================================
 // BASE EMAIL TEMPLATE WITH BRANDING
@@ -71,25 +162,51 @@ function getButton(text: string, url: string): string {
 }
 
 // ============================================
-// CORE EMAIL SENDER
+// CORE EMAIL SENDER WITH RETRY LOGIC
 // ============================================
-export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string; }) {
-    if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-        console.warn("⚠️ SMTP credentials not set. Email not sent to:", to);
+export async function sendEmail({ to, subject, html }: { to: string; subject: string; html: string; }): Promise<boolean> {
+    // Early validation
+    if (!isSmtpConfigured()) {
+        console.error(`❌ [SMTP] Cannot send email to ${to} - SMTP not configured`);
+        console.error("   Please set SMTP_USER and SMTP_PASS environment variables");
         return false;
     }
 
+    if (!to || !subject) {
+        console.error("❌ [SMTP] Invalid email parameters: missing 'to' or 'subject'");
+        return false;
+    }
+
+    console.log(`📧 [SMTP] Sending email to: ${to} | Subject: ${subject.substring(0, 50)}...`);
+
     try {
-        const info = await transporter.sendMail({
-            from: process.env.SMTP_FROM || `"Eco-Haat" <${process.env.SMTP_USER}>`,
-            to,
-            subject,
-            html,
-        });
-        console.log("✅ Email sent to", to, "Message ID:", info.messageId);
+        const result = await retryWithBackoff(async () => {
+            const transport = await getTransporter();
+            const info = await transport.sendMail({
+                from: SMTP_CONFIG.from || `"Eco-Haat" <${SMTP_CONFIG.user}>`,
+                to,
+                subject,
+                html,
+            });
+            return info;
+        }, 3, 1000); // 3 retries with 1s base delay
+
+        console.log(`✅ [SMTP] Email sent successfully to ${to} | MessageID: ${result.messageId}`);
         return true;
     } catch (error) {
-        console.error("❌ Error sending email:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`❌ [SMTP] Failed to send email to ${to} after 3 attempts`);
+        console.error(`   Error: ${errorMessage}`);
+
+        // Log additional debug info for common errors
+        if (errorMessage.includes("EAUTH") || errorMessage.includes("authentication")) {
+            console.error("   💡 Hint: Check your SMTP_USER and SMTP_PASS credentials");
+            console.error("   💡 For Gmail: Use an App Password (not your regular password)");
+        } else if (errorMessage.includes("ECONNREFUSED") || errorMessage.includes("ETIMEDOUT")) {
+            console.error("   💡 Hint: Check your SMTP_HOST and SMTP_PORT settings");
+            console.error("   💡 Make sure your firewall allows outbound SMTP connections");
+        }
+
         return false;
     }
 }
