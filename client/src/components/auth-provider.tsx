@@ -83,23 +83,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isMounted = () => mounted;
 
         // Check active sessions and sets the user
-        supabase.auth.getSession().then(async ({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session }, error }) => {
             if (!mounted) return;
+
+            // Handle invalid refresh token error
+            if (error) {
+                console.warn("Session error:", error.message);
+                if (error.message?.includes("Refresh Token") || error.message?.includes("refresh_token")) {
+                    console.log("🔄 Invalid refresh token detected. Clearing session...");
+                    // Clear corrupted auth data from localStorage
+                    for (const key of Object.keys(localStorage)) {
+                        if (key.startsWith('sb-') && key.includes('-auth')) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                    localStorage.removeItem("userRole");
+                    setSession(null);
+                    setUser(null);
+                    setUserRole(null);
+                    if (mounted) setLoading(false);
+                    return;
+                }
+            }
+
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user?.email) {
                 await fetchUserRole(session.user.email, isMounted);
             }
             if (mounted) setLoading(false);
-        }).catch(() => {
+        }).catch((err) => {
+            console.error("GetSession failed:", err);
+            // Clear potentially corrupted session on any auth error
+            for (const key of Object.keys(localStorage)) {
+                if (key.startsWith('sb-') && key.includes('-auth')) {
+                    localStorage.removeItem(key);
+                }
+            }
+            localStorage.removeItem("userRole");
+            setSession(null);
+            setUser(null);
+            setUserRole(null);
             if (mounted) setLoading(false);
         });
 
         // Listen for changes on auth state (logged in, signed out, etc.)
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (_event, session) => {
+        } = supabase.auth.onAuthStateChange(async (event, session) => {
             if (!mounted) return;
+
+            // Handle token refresh failure
+            if (event === 'TOKEN_REFRESHED' && !session) {
+                console.log("🔄 Token refresh failed. Clearing session...");
+                for (const key of Object.keys(localStorage)) {
+                    if (key.startsWith('sb-') && key.includes('-auth')) {
+                        localStorage.removeItem(key);
+                    }
+                }
+                localStorage.removeItem("userRole");
+                setSession(null);
+                setUser(null);
+                setUserRole(null);
+                if (mounted) setLoading(false);
+                return;
+            }
+
+            // Handle sign out
+            if (event === 'SIGNED_OUT') {
+                setSession(null);
+                setUser(null);
+                setUserRole(null);
+                localStorage.removeItem("userRole");
+                if (mounted) setLoading(false);
+                return;
+            }
+
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user?.email) {
