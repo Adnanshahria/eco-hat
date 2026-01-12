@@ -441,3 +441,50 @@ export async function sendOTPEmail(email: string, code: string, purpose: 'regist
         html: getEmailTemplate(content, `Your code is ${code}`)
     });
 }
+
+// ============================================
+// NEWSLETTER / PROMOTIONAL EMAILS
+// ============================================
+export async function sendNewsletterEmail(
+    email: string,
+    subject: string,
+    content: string,
+    previewText?: string
+): Promise<boolean> {
+    // Convert plain text content to HTML with proper formatting
+    const formattedContent = content
+        .split('\n\n')
+        .map(para => `<p style="color:#374151;font-size:16px;line-height:1.7;margin:0 0 15px 0;">${para.replace(/\n/g, '<br>')}</p>`)
+        .join('');
+
+    const htmlContent = `
+        <div style="text-align:center;margin-bottom:30px;">
+            <span style="font-size:40px;">📢</span>
+        </div>
+        
+        <h1 style="color:${PRIMARY_COLOR};font-size:24px;margin:0 0 20px 0;text-align:center;">
+            ${subject}
+        </h1>
+        
+        <div style="background:linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);border-radius:12px;padding:25px;margin:20px 0;">
+            ${formattedContent}
+        </div>
+        
+        <div style="text-align:center;margin:30px 0;">
+            ${getButton("Shop Now 🛒", "https://eco-hat-bd.vercel.app/shop")}
+        </div>
+        
+        <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:30px;">
+            <p style="color:#9ca3af;font-size:11px;text-align:center;margin:0;">
+                You received this email because you subscribed to Eco-Haat newsletter.<br>
+                <a href="https://eco-hat-bd.vercel.app/unsubscribe?email=${encodeURIComponent(email)}" style="color:#059669;">Unsubscribe</a>
+            </p>
+        </div>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `🌱 ${subject} - Eco-Haat`,
+        html: getEmailTemplate(htmlContent, previewText || subject)
+    });
+}

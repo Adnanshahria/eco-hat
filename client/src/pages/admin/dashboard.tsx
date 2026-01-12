@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2 } from "lucide-react";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
@@ -234,6 +234,115 @@ function SendNotificationSection({ users }: { users: User[] }) {
                         {sending ? "Sending..." : mode === "batch" ? `Send to ${batchTargets.length} Users` : "Send Notification"}
                     </Button>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+// Newsletter Broadcast Section Component
+function NewsletterBroadcastSection() {
+    const [subject, setSubject] = useState("");
+    const [content, setContent] = useState("");
+    const [sending, setSending] = useState(false);
+    const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
+    const [subscriberCount, setSubscriberCount] = useState<number | null>(null);
+
+    useEffect(() => {
+        // Fetch subscriber count
+        fetch("/api/newsletter/subscribers/count")
+            .then(res => res.json())
+            .then(data => setSubscriberCount(data.count || 0))
+            .catch(() => setSubscriberCount(0));
+    }, []);
+
+    const handleSend = async () => {
+        if (!subject.trim() || !content.trim()) {
+            setResult({ ok: false, text: "Please fill in subject and content" });
+            return;
+        }
+
+        setSending(true);
+        setResult(null);
+
+        try {
+            const res = await fetch("/api/newsletter/broadcast", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subject, content })
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setResult({ ok: true, text: `✅ Newsletter sent to ${data.sent} subscriber${data.sent !== 1 ? 's' : ''}!` });
+                setSubject("");
+                setContent("");
+            } else {
+                setResult({ ok: false, text: data.error || "Failed to send newsletter" });
+            }
+        } catch (err: any) {
+            setResult({ ok: false, text: err.message || "Failed to send newsletter" });
+        } finally {
+            setSending(false);
+        }
+    };
+
+    return (
+        <div className="bg-card rounded-xl border p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Mail className="h-5 w-5 text-primary" /> Newsletter Broadcast
+                </h3>
+                <div className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
+                    {subscriberCount !== null ? `${subscriberCount} subscribers` : "Loading..."}
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <div>
+                    <label className="text-sm font-medium block mb-1.5">Subject</label>
+                    <Input
+                        id="newsletter-subject"
+                        name="subject"
+                        placeholder="e.g., 🎉 Special Offer - 20% Off All Eco Products!"
+                        value={subject}
+                        onChange={e => setSubject(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label className="text-sm font-medium block mb-1.5">Content</label>
+                    <textarea
+                        id="newsletter-content"
+                        name="content"
+                        placeholder="Write your newsletter content here...
+
+You can use multiple paragraphs.
+
+Include details about offers, new products, or announcements."
+                        value={content}
+                        onChange={e => setContent(e.target.value)}
+                        className="w-full border rounded-lg p-3 text-sm bg-background resize-none h-32"
+                    />
+                </div>
+
+                {result && (
+                    <div className={`p-3 rounded-lg text-sm ${result.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>
+                        {result.text}
+                    </div>
+                )}
+
+                <Button
+                    onClick={handleSend}
+                    disabled={sending || !subject || !content || subscriberCount === 0}
+                    className="w-full gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700"
+                >
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    {sending ? "Sending..." : `Send to ${subscriberCount || 0} Subscribers`}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                    Emails will be sent to all newsletter subscribers with the Eco-Haat branding.
+                </p>
             </div>
         </div>
     );
@@ -665,6 +774,9 @@ export default function AdminDashboard() {
 
                             {/* Send Notification Section */}
                             <SendNotificationSection users={users} />
+
+                            {/* Newsletter Broadcast Section */}
+                            <NewsletterBroadcastSection />
                         </>
                     )}
 

@@ -12,7 +12,8 @@ import {
   sendNewOrderNotificationToAdmin,
   sendOrderStatusEmailToAdmin,
   sendEmail,
-  sendOTPEmail
+  sendOTPEmail,
+  sendNewsletterEmail
 } from "./email";
 
 export async function registerRoutes(
@@ -250,7 +251,7 @@ export async function registerRoutes(
           <p style="color:#374151;font-size:15px;line-height:1.7;margin:0;">${message}</p>
         </div>
         <div style="text-align:center;">
-          <a href="https://ecohaat.bd" style="display:inline-block;background:linear-gradient(135deg, #059669 0%, #10B981 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:14px;">Visit EcoHaat</a>
+          <a href="https://eco-hat-bd.vercel.app" style="display:inline-block;background:linear-gradient(135deg, #059669 0%, #10B981 100%);color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:8px;font-weight:600;font-size:14px;">Visit EcoHaat</a>
         </div>
       `;
 
@@ -298,6 +299,84 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error sending custom notification email:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // ============================================
+  // NEWSLETTER BROADCAST TO SUBSCRIBERS
+  // ============================================
+  app.post("/api/newsletter/broadcast", async (req, res) => {
+    const { subject, content, previewText } = req.body;
+    if (!subject || !content) {
+      return res.status(400).json({ error: "Subject and content are required" });
+    }
+
+    console.log(`📧 [Newsletter] Starting broadcast - Subject: ${subject}`);
+
+    try {
+      // Fetch all subscribers from Supabase
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        console.error("❌ [Newsletter] Missing Supabase credentials");
+        return res.status(500).json({ error: "Database connection not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data: subscribers, error: fetchError } = await supabase.from("subscribers").select("email");
+
+      if (fetchError) {
+        console.error("❌ [Newsletter] Failed to fetch subscribers:", fetchError);
+        return res.status(500).json({ error: "Failed to fetch subscribers" });
+      }
+
+      if (!subscribers || subscribers.length === 0) {
+        console.log("⚠️ [Newsletter] No subscribers found");
+        return res.json({ success: true, sent: 0, message: "No subscribers to send to" });
+      }
+
+      console.log(`📧 [Newsletter] Sending to ${subscribers.length} subscribers`);
+
+      let successCount = 0;
+      let failedCount = 0;
+
+      for (const subscriber of subscribers) {
+        try {
+          await sendNewsletterEmail(subscriber.email, subject, content, previewText);
+          successCount++;
+          console.log(`✅ [Newsletter] Sent to ${subscriber.email}`);
+        } catch (err) {
+          failedCount++;
+          console.error(`❌ [Newsletter] Failed for ${subscriber.email}:`, err);
+        }
+      }
+
+      console.log(`📧 [Newsletter] Broadcast complete: ${successCount} sent, ${failedCount} failed`);
+      res.json({ success: true, sent: successCount, failed: failedCount, total: subscribers.length });
+    } catch (error) {
+      console.error("❌ [Newsletter] Broadcast error:", error);
+      res.status(500).json({ error: "Failed to broadcast newsletter" });
+    }
+  });
+
+  // Get subscriber count for admin dashboard
+  app.get("/api/newsletter/subscribers/count", async (req, res) => {
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        return res.json({ count: 0 });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { count, error } = await supabase.from("subscribers").select("*", { count: "exact", head: true });
+
+      res.json({ count: count || 0 });
+    } catch (error) {
+      console.error("Error fetching subscriber count:", error);
+      res.json({ count: 0 });
     }
   });
 
