@@ -270,18 +270,9 @@ export default function Checkout() {
                 // Send email to seller
                 const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
                 if (sellerData?.email) {
-                    const sellerItem = items.find(i => i.product.seller_id === sellerId);
-                    fetch("/api/notifications/seller/new-order", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            email: sellerData.email,
-                            orderNumber,
-                            productName: sellerItem?.product.name || "Product",
-                            quantity: sellerItem?.quantity || 1,
-                            earning: sellerItem ? sellerItem.product.price * sellerItem.quantity : 0
-                        }),
-                    }).catch(err => console.error("Failed to send seller email:", err));
+                    // TODO: Re-enable when Resend email service is configured
+                    // Email notifications temporarily disabled on Vercel (use Resend API)
+                    console.log(`[Email pending] Seller notification for ${sellerData.email}`);
                 }
             }
 
@@ -299,34 +290,19 @@ export default function Checkout() {
                         "info"
                     );
 
-                    // Send email to admin
+                    // TODO: Re-enable when Resend email service is configured
+                    // Email notifications temporarily disabled on Vercel (use Resend API)
                     if (admin.email) {
-                        fetch("/api/notifications/admin/new-order", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                email: admin.email,
-                                orderNumber,
-                                total: grandTotal,
-                                buyerName: form.fullName
-                            }),
-                        }).catch(err => console.error("Failed to send admin email:", err));
+                        console.log(`[Email pending] Admin notification for ${admin.email}`);
                     }
                 }
             }
 
             await clearCart();
 
-            // Send order confirmation email to buyer
-            fetch("/api/notifications/order-confirmation", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    email: profile.email,
-                    orderId: order.id,
-                    total: grandTotal
-                }),
-            }).catch(err => console.error("Failed to send order confirmation email:", err));
+            // TODO: Re-enable when Resend email service is configured
+            // Order confirmation email temporarily disabled on Vercel (use Resend API)
+            console.log(`[Email pending] Order confirmation for ${profile.email}`);
 
             setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err: any) {
