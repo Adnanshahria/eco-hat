@@ -110,16 +110,31 @@ export default function ProductDetail() {
     };
 
     const fetchReviews = async () => {
-        const { data } = await supabase
+        // Fetch reviews without join to avoid 400 error
+        const { data: reviewsData } = await supabase
             .from("reviews")
-            .select(`
-                *,
-                user:users!buyer_id(username, avatar_url)
-            `)
+            .select("*")
             .eq("product_id", id)
             .order("created_at", { ascending: false });
 
-        if (data) setReviews(data);
+        if (reviewsData && reviewsData.length > 0) {
+            // Fetch user data for each review
+            const userIds = [...new Set(reviewsData.map(r => r.buyer_id).filter(Boolean))];
+            const { data: usersData } = await supabase
+                .from("users")
+                .select("id, username, avatar_url")
+                .in("id", userIds);
+
+            // Map users to reviews
+            const reviewsWithUsers = reviewsData.map(review => ({
+                ...review,
+                user: usersData?.find(u => u.id === review.buyer_id) || null
+            }));
+
+            setReviews(reviewsWithUsers);
+        } else {
+            setReviews([]);
+        }
     };
 
     const handleAddToCart = async () => {
