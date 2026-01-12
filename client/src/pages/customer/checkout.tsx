@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { AppLink as Link } from "@/components/app-link";
 import { useLocation } from "wouter";
 import { createNotification } from "@/components/notifications";
+import { sendEmail, getOrderConfirmationEmail, getSellerOrderEmail, getAdminOrderEmail } from "@/lib/email";
 
 const divisions = ["Dhaka", "Chittagong", "Rajshahi", "Khulna", "Barisal", "Sylhet", "Rangpur", "Mymensingh"];
 
@@ -267,12 +268,19 @@ export default function Checkout() {
                     "info"
                 );
 
-                // Send email to seller
+                // Send email to seller via Resend
                 const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
                 if (sellerData?.email) {
-                    // TODO: Re-enable when Resend email service is configured
-                    // Email notifications temporarily disabled on Vercel (use Resend API)
-                    console.log(`[Email pending] Seller notification for ${sellerData.email}`);
+                    const sellerItem = items.find(i => i.product.seller_id === sellerId);
+                    const emailData = getSellerOrderEmail(
+                        orderNumber,
+                        sellerItem?.product.name || "Product",
+                        sellerItem?.quantity || 1,
+                        sellerItem ? sellerItem.product.price * sellerItem.quantity : 0
+                    );
+                    sendEmail({ ...emailData, to: sellerData.email }).catch(err =>
+                        console.log("[Email] Seller notification pending:", err)
+                    );
                 }
             }
 
@@ -290,19 +298,23 @@ export default function Checkout() {
                         "info"
                     );
 
-                    // TODO: Re-enable when Resend email service is configured
-                    // Email notifications temporarily disabled on Vercel (use Resend API)
+                    // Send email to admin via Resend
                     if (admin.email) {
-                        console.log(`[Email pending] Admin notification for ${admin.email}`);
+                        const emailData = getAdminOrderEmail(orderNumber, grandTotal, form.fullName);
+                        sendEmail({ ...emailData, to: admin.email }).catch(err =>
+                            console.log("[Email] Admin notification pending:", err)
+                        );
                     }
                 }
             }
 
             await clearCart();
 
-            // TODO: Re-enable when Resend email service is configured
-            // Order confirmation email temporarily disabled on Vercel (use Resend API)
-            console.log(`[Email pending] Order confirmation for ${profile.email}`);
+            // Send order confirmation email to buyer via Resend
+            const confirmationEmail = getOrderConfirmationEmail(orderNumber, grandTotal, form.fullName);
+            sendEmail({ ...confirmationEmail, to: profile.email }).catch(err =>
+                console.log("[Email] Order confirmation pending:", err)
+            );
 
             setLocation(`/shop/order-confirmation/${order.id}`);
         } catch (err: any) {
