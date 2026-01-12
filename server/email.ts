@@ -474,10 +474,10 @@ export async function sendNewsletterEmail(
             ${getButton("Shop Now 🛒", "https://eco-hat-bd.vercel.app/shop")}
         </div>
         
+        
         <div style="border-top:1px solid #e5e7eb;padding-top:20px;margin-top:30px;">
             <p style="color:#9ca3af;font-size:11px;text-align:center;margin:0;">
-                You received this email because you subscribed to Eco-Haat newsletter.<br>
-                <a href="https://eco-hat-bd.vercel.app/unsubscribe?email=${encodeURIComponent(email)}" style="color:#059669;">Unsubscribe</a>
+                You received this email because you subscribed to Eco-Haat newsletter.
             </p>
         </div>
     `;
