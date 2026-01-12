@@ -10,6 +10,7 @@ import { useAuth } from "@/components/auth-provider";
 import { supabase } from "@/lib/supabase";
 import { createNotification } from "@/components/notifications";
 import { AppLink as Link } from "@/components/app-link";
+import { sendEmail } from "@/lib/email";
 import SellerLayout from "@/components/seller-layout";
 
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -305,33 +306,27 @@ export default function SellerDashboard() {
                     "info"
                 );
 
-                // Send email to buyer
+                // Send email to buyer via Resend
                 const { data: buyerData } = await supabase.from("users").select("email").eq("id", bId).single();
                 if (buyerData?.email) {
-                    fetch("/api/notifications/order-status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            email: buyerData.email,
-                            orderId,
-                            orderNumber: orderData.order_number || orderId,
-                            status: newStatus,
-                            note
-                        }),
-                    }).catch(err => console.error("Failed to send buyer email:", err));
+                    sendEmail({
+                        to: buyerData.email,
+                        subject: `📦 Order Update - #${orderData.order_number || orderId}`,
+                        html: `<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                            <div style="text-align:center;padding:20px;background:linear-gradient(135deg,#10b981,#059669);border-radius:12px">
+                                <h1 style="color:white;margin:0">🌱 Eco-Haat</h1>
+                            </div>
+                            <div style="padding:30px;background:#f0fdf4;border-radius:12px;margin-top:20px">
+                                <h2 style="color:#166534">Order Update</h2>
+                                <p><strong>Order:</strong> #${orderData.order_number || orderId}</p>
+                                <p><strong>Status:</strong> ${newStatus.replace(/_/g, " ").toUpperCase()}</p>
+                                <p>${note}</p>
+                                <a href="https://eco-haat-bd.vercel.app/shop/orders" style="display:inline-block;padding:12px 24px;background:#10b981;color:white;text-decoration:none;border-radius:6px;margin-top:10px">Track Order</a>
+                            </div>
+                        </div>`
+                    }).catch(err => console.log("[Email] Buyer notification pending:", err));
                 }
             }
-
-            // Notify Admin
-            fetch("/api/notifications/admin/order-status", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    orderNumber: orderData.order_number || orderId,
-                    status: newStatus,
-                    note
-                }),
-            }).catch(err => console.error("Failed to send admin email:", err));
 
             // Notify Seller (in-app + email)
             if (sellerId) {
@@ -341,21 +336,6 @@ export default function SellerDashboard() {
                     `Status changed to ${newStatus.replace(/_/g, " ")}. ${note}`,
                     "info"
                 );
-
-                // Get seller email and send notification
-                const { data: sellerData } = await supabase.from("users").select("email, username").eq("id", sellerId).single();
-                if (sellerData?.email) {
-                    fetch("/api/notifications/seller/order-status", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            email: sellerData.email,
-                            orderNumber: orderData.order_number || orderId,
-                            status: newStatus,
-                            buyerName: "Customer"
-                        }),
-                    }).catch(err => console.error("Failed to send seller email:", err));
-                }
             }
         }
     };

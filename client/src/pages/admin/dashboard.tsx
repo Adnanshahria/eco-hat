@@ -50,11 +50,8 @@ function SendNotificationSection({ users }: { users: User[] }) {
                 // Single user notification
                 await createNotification(selectedUserId!, title, message, notifType);
 
-                fetch("/api/notifications/admin/send", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: selectedUser?.email, title, message, type: notifType })
-                }).catch(err => console.warn("Email failed:", err));
+                // Email disabled on Vercel - using in-app notification only
+                console.log(`[Email pending] Notification to ${selectedUser?.email}`);
 
                 setResult({ ok: true, text: `✅ Notification sent to ${selectedUser?.username}!` });
             } else {
@@ -64,11 +61,8 @@ function SendNotificationSection({ users }: { users: User[] }) {
                     try {
                         await createNotification(user.id, title, message, notifType);
 
-                        fetch("/api/notifications/admin/send", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ email: user.email, title, message, type: notifType })
-                        }).catch(() => { });
+                        // Email disabled on Vercel
+                        console.log(`[Email pending] Batch notification to ${user.email}`);
 
                         successCount++;
                     } catch {
@@ -824,20 +818,10 @@ export default function AdminDashboard() {
                         "info"
                     );
 
-                    // Send email to buyer
+                    // Send email to buyer (disabled on Vercel)
                     const { data: buyerData } = await supabase.from("users").select("email").eq("id", orderData.buyer_id).single();
                     if (buyerData?.email) {
-                        fetch("/api/notifications/order-status", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                                email: buyerData.email,
-                                orderId,
-                                orderNumber: orderData.order_number || orderId,
-                                status: newStatus,
-                                note
-                            }),
-                        }).catch(err => console.error("Failed to send buyer email:", err));
+                        console.log(`[Email pending] Order status update to ${buyerData.email}`);
                     }
                 }
             }

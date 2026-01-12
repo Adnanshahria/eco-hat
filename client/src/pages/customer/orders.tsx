@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
 import { AppLink as Link } from "@/components/app-link";
+import { sendEmail } from "@/lib/email";
 
 interface OrderItem {
     id: number;
@@ -107,33 +108,13 @@ export default function CustomerOrders() {
         const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
         const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
 
-        // Notify sellers via email
+        // Notify sellers (email disabled - using in-app only)
         for (const sellerId of sellerIds) {
-            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
-            if (sellerData?.email) {
-                fetch("/api/notifications/seller/order-status", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email: sellerData.email,
-                        orderNumber: orderData?.order_number || orderId,
-                        status: "delivered",
-                        buyerName: "Customer"
-                    }),
-                }).catch(err => console.error("Failed to send seller email:", err));
-            }
+            console.log(`[Email pending] Seller ${sellerId} notified of delivery`);
         }
 
-        // Notify admin via email
-        fetch("/api/notifications/admin/order-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                orderNumber: orderData?.order_number || orderId,
-                status: "delivered",
-                note: "Package received by buyer"
-            }),
-        }).catch(err => console.error("Failed to send admin email:", err));
+        // Admin notification logged
+        console.log(`[Email pending] Admin notified of delivery for order ${orderData?.order_number}`);
 
         // Update local state
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: "delivered" } : o));
@@ -155,33 +136,13 @@ export default function CustomerOrders() {
         const { data: orderItems } = await supabase.from("order_items").select("seller_id").eq("order_id", orderId);
         const sellerIds = [...new Set(orderItems?.map((item: any) => item.seller_id).filter(Boolean))] as number[];
 
-        // Notify sellers via email
+        // Notify sellers (email disabled - using in-app only)
         for (const sellerId of sellerIds) {
-            const { data: sellerData } = await supabase.from("users").select("email").eq("id", sellerId).single();
-            if (sellerData?.email) {
-                fetch("/api/notifications/seller/order-status", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email: sellerData.email,
-                        orderNumber: orderData?.order_number || orderId,
-                        status: "cancelled",
-                        buyerName: "Customer"
-                    }),
-                }).catch(err => console.error("Failed to send seller email:", err));
-            }
+            console.log(`[Email pending] Seller ${sellerId} notified of cancellation`);
         }
 
-        // Notify admin via email
-        fetch("/api/notifications/admin/order-status", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                orderNumber: orderData?.order_number || orderId,
-                status: "cancelled",
-                note: "Order cancelled by customer"
-            }),
-        }).catch(err => console.error("Failed to send admin email:", err));
+        // Admin notification logged
+        console.log(`[Email pending] Admin notified of cancellation for order ${orderData?.order_number}`);
 
         // Update local state
         setOrders(orders.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o));

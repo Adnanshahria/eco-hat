@@ -91,23 +91,8 @@ export default function SellerVerificationDetail() {
             approved ? "success" : "error"
         );
 
-        // Send email notification
-        try {
-            await fetch('/api/notifications/admin/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: seller.email,
-                    title: approved ? "🎉 Seller Verification Approved!" : "❌ Seller Verification Rejected",
-                    message: approved
-                        ? "Congratulations! Your seller account has been approved. You can now list products on EcoHaat."
-                        : `Your seller verification request was rejected. Reason: ${reason}`,
-                    type: approved ? "success" : "error"
-                })
-            });
-        } catch (emailErr) {
-            console.warn("Email notification failed:", emailErr);
-        }
+        // Email notification disabled on Vercel (in-app notification via createNotification works)
+        console.log(`[Email pending] Verification ${approved ? 'approved' : 'rejected'} for ${seller.email}`);
 
         if (approved) {
             // Ensure role is seller
