@@ -190,7 +190,12 @@ export default function Auth() {
         setError(null);
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email);
-            if (error) throw error;
+            if (error) {
+                if (error.message.includes('rate') || error.status === 429) {
+                    throw new Error("Too many requests. Please wait a minute before trying again.");
+                }
+                throw error;
+            }
             setMessage("✅ Password reset code sent to your email.");
             setStep("reset_password");
             // Start resend cooldown (60 seconds)
