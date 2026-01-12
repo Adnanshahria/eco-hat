@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useRoute } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2, Mail } from "lucide-react";
+import { Users, Package, ShoppingCart, TrendingUp, LogOut, Shield, AlertTriangle, Check, X, Crown, Clock, Truck, Home, Store, ExternalLink, MapPin, Menu, LayoutDashboard, Bell, Send, Search, Loader2, Mail, Tag, Percent, Gift, Trash2, Plus, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/components/auth-provider";
@@ -344,6 +344,254 @@ Include details about offers, new products, or announcements."
                     Emails will be sent to all newsletter subscribers with the Eco-Haat branding.
                 </p>
             </div>
+        </div>
+    );
+}
+
+// Discount Code Interface
+interface DiscountCode {
+    id: number;
+    code: string;
+    description: string;
+    discount_type: "percentage" | "fixed" | "free_shipping";
+    discount_value: number;
+    max_discount: number | null;
+    min_order_amount: number;
+    max_uses: number | null;
+    uses_count: number;
+    per_user_limit: number;
+    valid_from: string;
+    valid_until: string | null;
+    is_active: boolean;
+    created_at: string;
+}
+
+// Discount Management Section Component
+function DiscountManagementSection() {
+    const [discounts, setDiscounts] = useState<DiscountCode[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [showForm, setShowForm] = useState(false);
+    const [editing, setEditing] = useState<DiscountCode | null>(null);
+    const [saving, setSaving] = useState(false);
+    const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        code: "",
+        description: "",
+        discount_type: "percentage" as "percentage" | "fixed" | "free_shipping",
+        discount_value: 10,
+        max_discount: "",
+        min_order_amount: 0,
+        max_uses: "",
+        per_user_limit: 1,
+        valid_until: "",
+        is_active: true
+    });
+
+    useEffect(() => { fetchDiscounts(); }, []);
+
+    const fetchDiscounts = async () => {
+        setLoading(true);
+        try {
+            const res = await fetch("/api/admin/discounts");
+            const data = await res.json();
+            if (Array.isArray(data)) setDiscounts(data);
+        } catch (err) {
+            console.error("Failed to fetch discounts:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const generateCode = () => {
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let code = "ECO-";
+        for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        setFormData(f => ({ ...f, code }));
+    };
+
+    const resetForm = () => {
+        setFormData({
+            code: "", description: "", discount_type: "percentage", discount_value: 10,
+            max_discount: "", min_order_amount: 0, max_uses: "", per_user_limit: 1, valid_until: "", is_active: true
+        });
+        setEditing(null);
+        setShowForm(false);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaving(true);
+        setMsg(null);
+
+        try {
+            const payload = {
+                ...formData,
+                max_discount: formData.max_discount ? Number(formData.max_discount) : null,
+                max_uses: formData.max_uses ? Number(formData.max_uses) : null,
+                valid_until: formData.valid_until || null
+            };
+
+            const url = editing ? `/api/admin/discounts/${editing.id}` : "/api/admin/discounts";
+            const method = editing ? "PUT" : "POST";
+
+            const res = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                setMsg({ ok: true, text: editing ? "Discount updated!" : "Discount created!" });
+                fetchDiscounts();
+                resetForm();
+            } else {
+                setMsg({ ok: false, text: data.error || "Failed to save" });
+            }
+        } catch (err: any) {
+            setMsg({ ok: false, text: err.message });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const handleEdit = (d: DiscountCode) => {
+        setEditing(d);
+        setFormData({
+            code: d.code,
+            description: d.description || "",
+            discount_type: d.discount_type,
+            discount_value: d.discount_value,
+            max_discount: d.max_discount?.toString() || "",
+            min_order_amount: d.min_order_amount,
+            max_uses: d.max_uses?.toString() || "",
+            per_user_limit: d.per_user_limit,
+            valid_until: d.valid_until ? d.valid_until.split("T")[0] : "",
+            is_active: d.is_active
+        });
+        setShowForm(true);
+    };
+
+    const handleDelete = async (id: number) => {
+        if (!confirm("Delete this discount code?")) return;
+        try {
+            await fetch(`/api/admin/discounts/${id}`, { method: "DELETE" });
+            fetchDiscounts();
+        } catch (err) {
+            console.error("Delete failed:", err);
+        }
+    };
+
+    const toggleActive = async (d: DiscountCode) => {
+        await fetch(`/api/admin/discounts/${d.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ is_active: !d.is_active })
+        });
+        fetchDiscounts();
+    };
+
+    return (
+        <div className="bg-card rounded-xl border p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-lg flex items-center gap-2">
+                    <Tag className="h-5 w-5 text-primary" /> Discount Codes
+                </h3>
+                <Button size="sm" onClick={() => { resetForm(); setShowForm(!showForm); }} className="gap-1">
+                    <Plus className="h-4 w-4" /> {showForm ? "Cancel" : "New Code"}
+                </Button>
+            </div>
+
+            {/* Create/Edit Form */}
+            {showForm && (
+                <form onSubmit={handleSubmit} className="bg-muted/50 rounded-lg p-4 mb-4 space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <div>
+                            <label className="text-xs font-medium">Code</label>
+                            <div className="flex gap-1">
+                                <Input value={formData.code} onChange={e => setFormData(f => ({ ...f, code: e.target.value.toUpperCase() }))} placeholder="ECOFIRST10" required />
+                                <Button type="button" size="sm" variant="outline" onClick={generateCode}>Gen</Button>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">Type</label>
+                            <select value={formData.discount_type} onChange={e => setFormData(f => ({ ...f, discount_type: e.target.value as any }))} className="w-full border rounded-md h-9 px-2 bg-background text-sm">
+                                <option value="percentage">Percentage %</option>
+                                <option value="fixed">Fixed Amount ৳</option>
+                                <option value="free_shipping">Free Shipping</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">Value</label>
+                            <Input type="number" value={formData.discount_value} onChange={e => setFormData(f => ({ ...f, discount_value: Number(e.target.value) }))} min={0} />
+                        </div>
+                        {formData.discount_type === "percentage" && (
+                            <div>
+                                <label className="text-xs font-medium">Max Discount ৳</label>
+                                <Input type="number" value={formData.max_discount} onChange={e => setFormData(f => ({ ...f, max_discount: e.target.value }))} placeholder="e.g., 500" />
+                            </div>
+                        )}
+                        <div>
+                            <label className="text-xs font-medium">Min Order ৳</label>
+                            <Input type="number" value={formData.min_order_amount} onChange={e => setFormData(f => ({ ...f, min_order_amount: Number(e.target.value) }))} min={0} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">Max Uses</label>
+                            <Input type="number" value={formData.max_uses} onChange={e => setFormData(f => ({ ...f, max_uses: e.target.value }))} placeholder="Unlimited" />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">Per User Limit</label>
+                            <Input type="number" value={formData.per_user_limit} onChange={e => setFormData(f => ({ ...f, per_user_limit: Number(e.target.value) }))} min={1} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-medium">Expires</label>
+                            <Input type="date" value={formData.valid_until} onChange={e => setFormData(f => ({ ...f, valid_until: e.target.value }))} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-medium">Description (internal)</label>
+                        <Input value={formData.description} onChange={e => setFormData(f => ({ ...f, description: e.target.value }))} placeholder="e.g., Summer sale 2026" />
+                    </div>
+                    {msg && <div className={`text-sm p-2 rounded ${msg.ok ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}>{msg.text}</div>}
+                    <Button type="submit" disabled={saving} className="w-full">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : (editing ? "Update" : "Create")} Discount</Button>
+                </form>
+            )}
+
+            {/* Discounts List */}
+            {loading ? (
+                <div className="text-center py-8 text-muted-foreground">Loading...</div>
+            ) : discounts.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">No discount codes yet</div>
+            ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto">
+                    {discounts.map(d => (
+                        <div key={d.id} className={`flex items-center justify-between p-3 rounded-lg border ${d.is_active ? "bg-green-50/50" : "bg-muted/50 opacity-60"}`}>
+                            <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                    <code className="font-bold text-primary">{d.code}</code>
+                                    <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                                        {d.discount_type === "percentage" ? `${d.discount_value}%${d.max_discount ? ` max ৳${d.max_discount}` : ""}` :
+                                            d.discount_type === "fixed" ? `৳${d.discount_value}` : "Free Shipping"}
+                                    </span>
+                                    {!d.is_active && <span className="text-xs text-red-500">Inactive</span>}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                    {d.min_order_amount > 0 && `Min ৳${d.min_order_amount} • `}
+                                    Uses: {d.uses_count}{d.max_uses ? `/${d.max_uses}` : ""}
+                                    {d.valid_until && ` • Expires: ${new Date(d.valid_until).toLocaleDateString()}`}
+                                </div>
+                            </div>
+                            <div className="flex gap-1">
+                                <Button size="sm" variant="ghost" onClick={() => toggleActive(d)} className="h-8 w-8 p-0">{d.is_active ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}</Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleEdit(d)} className="h-8 w-8 p-0"><Edit className="h-4 w-4" /></Button>
+                                <Button size="sm" variant="ghost" onClick={() => handleDelete(d.id)} className="h-8 w-8 p-0 text-red-500"><Trash2 className="h-4 w-4" /></Button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -777,6 +1025,9 @@ export default function AdminDashboard() {
 
                             {/* Newsletter Broadcast Section */}
                             <NewsletterBroadcastSection />
+
+                            {/* Discount Codes Section */}
+                            <DiscountManagementSection />
                         </>
                     )}
 

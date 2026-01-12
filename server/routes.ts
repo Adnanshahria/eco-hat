@@ -381,6 +381,276 @@ export async function registerRoutes(
   });
 
   // ============================================
+  // DISCOUNT CODE SYSTEM
+  // ============================================
+
+  // Validate discount code for cart
+  app.post("/api/discount/validate", async (req, res) => {
+    const { code, cartTotal, userId } = req.body;
+    if (!code) {
+      return res.status(400).json({ valid: false, error: "Code is required" });
+    }
+
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ valid: false, error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Find the discount code
+      const { data: discount, error } = await supabase
+        .from("discount_codes")
+        .select("*")
+        .eq("code", code.toUpperCase().trim())
+        .single();
+
+      if (error || !discount) {
+        return res.json({ valid: false, error: "Invalid discount code" });
+      }
+
+      // Check if active
+      if (!discount.is_active) {
+        return res.json({ valid: false, error: "This code is no longer active" });
+      }
+
+      // Check date validity
+      const now = new Date();
+      if (discount.valid_from && new Date(discount.valid_from) > now) {
+        return res.json({ valid: false, error: "This code is not yet active" });
+      }
+      if (discount.valid_until && new Date(discount.valid_until) < now) {
+        return res.json({ valid: false, error: "This code has expired" });
+      }
+
+      // Check max uses
+      if (discount.max_uses && discount.uses_count >= discount.max_uses) {
+        return res.json({ valid: false, error: "This code has reached its usage limit" });
+      }
+
+      // Check minimum order amount
+      if (discount.min_order_amount && cartTotal < discount.min_order_amount) {
+        return res.json({
+          valid: false,
+          error: `Minimum order amount of ৳${discount.min_order_amount} required`
+        });
+      }
+
+      // Check per-user limit if user is logged in
+      if (userId && discount.per_user_limit) {
+        const { count } = await supabase
+          .from("discount_code_uses")
+          .select("*", { count: "exact", head: true })
+          .eq("code_id", discount.id)
+          .eq("user_id", userId);
+
+        if (count && count >= discount.per_user_limit) {
+          return res.json({ valid: false, error: "You have already used this code" });
+        }
+      }
+
+      // Calculate discount amount
+      let discountAmount = 0;
+      let discountLabel = "";
+
+      if (discount.discount_type === "percentage") {
+        discountAmount = (cartTotal * discount.discount_value) / 100;
+        // Apply max discount cap if set
+        if (discount.max_discount && discountAmount > discount.max_discount) {
+          discountAmount = discount.max_discount;
+          discountLabel = `${discount.discount_value}% off (max ৳${discount.max_discount})`;
+        } else {
+          discountLabel = `${discount.discount_value}% off`;
+        }
+      } else if (discount.discount_type === "fixed") {
+        discountAmount = Math.min(discount.discount_value, cartTotal);
+        discountLabel = `৳${discount.discount_value} off`;
+      } else if (discount.discount_type === "free_shipping") {
+        discountAmount = 0; // Handle shipping discount separately
+        discountLabel = "Free Shipping";
+      }
+
+      res.json({
+        valid: true,
+        discount: {
+          id: discount.id,
+          code: discount.code,
+          type: discount.discount_type,
+          value: discount.discount_value,
+          discountAmount: Math.round(discountAmount),
+          label: discountLabel,
+          freeShipping: discount.discount_type === "free_shipping"
+        }
+      });
+    } catch (err: any) {
+      console.error("Discount validation error:", err);
+      res.status(500).json({ valid: false, error: "Failed to validate code" });
+    }
+  });
+
+  // Apply discount to order (call after order is created)
+  app.post("/api/discount/apply", async (req, res) => {
+    const { codeId, userId, orderId } = req.body;
+    if (!codeId || !orderId) {
+      return res.status(400).json({ error: "Code ID and Order ID required" });
+    }
+
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      // Record the usage
+      await supabase.from("discount_code_uses").insert({
+        code_id: codeId,
+        user_id: userId || null,
+        order_id: orderId
+      });
+
+      // Increment uses_count
+      await supabase.rpc("increment_discount_uses", { code_id: codeId });
+
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Discount apply error:", err);
+      res.status(500).json({ error: "Failed to apply discount" });
+    }
+  });
+
+  // Admin: Get all discount codes
+  app.get("/api/admin/discounts", async (req, res) => {
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      res.json(data || []);
+    } catch (err: any) {
+      console.error("Error fetching discounts:", err);
+      res.status(500).json({ error: "Failed to fetch discounts" });
+    }
+  });
+
+  // Admin: Create discount code
+  app.post("/api/admin/discounts", async (req, res) => {
+    const { code, description, discount_type, discount_value, min_order_amount, max_uses, per_user_limit, valid_from, valid_until, is_active } = req.body;
+
+    if (!code || !discount_type) {
+      return res.status(400).json({ error: "Code and discount type are required" });
+    }
+
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .insert({
+          code: code.toUpperCase().trim(),
+          description,
+          discount_type,
+          discount_value: discount_value || 0,
+          min_order_amount: min_order_amount || 0,
+          max_uses: max_uses || null,
+          per_user_limit: per_user_limit || 1,
+          valid_from: valid_from || new Date().toISOString(),
+          valid_until: valid_until || null,
+          is_active: is_active !== false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        if (error.code === "23505") {
+          return res.status(400).json({ error: "A code with this name already exists" });
+        }
+        throw error;
+      }
+      res.json(data);
+    } catch (err: any) {
+      console.error("Error creating discount:", err);
+      res.status(500).json({ error: "Failed to create discount" });
+    }
+  });
+
+  // Admin: Update discount code
+  app.put("/api/admin/discounts/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid ID" });
+    }
+
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { data, error } = await supabase
+        .from("discount_codes")
+        .update(req.body)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      res.json(data);
+    } catch (err: any) {
+      console.error("Error updating discount:", err);
+      res.status(500).json({ error: "Failed to update discount" });
+    }
+  });
+
+  // Admin: Delete discount code
+  app.delete("/api/admin/discounts/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid ID" });
+    }
+
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY;
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: "Database not configured" });
+      }
+
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      const { error } = await supabase
+        .from("discount_codes")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+      res.json({ success: true });
+    } catch (err: any) {
+      console.error("Error deleting discount:", err);
+      res.status(500).json({ error: "Failed to delete discount" });
+    }
+  });
+
+  // ============================================
   // OTP AUTHENTICATION
   // ============================================
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ArrowRight, MapPin, CreditCard, Truck, Check, Info, Leaf, Home } from "lucide-react";
+import { ArrowLeft, ArrowRight, MapPin, CreditCard, Truck, Check, Info, Leaf, Home, Tag, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +40,49 @@ export default function Checkout() {
         address: "",
     });
 
+    // Coupon/Discount state
+    const [couponCode, setCouponCode] = useState("");
+    const [couponLoading, setCouponLoading] = useState(false);
+    const [couponError, setCouponError] = useState<string | null>(null);
+    const [appliedDiscount, setAppliedDiscount] = useState<{
+        id: number;
+        code: string;
+        type: string;
+        value: number;
+        discountAmount: number;
+        label: string;
+        freeShipping: boolean;
+    } | null>(null);
+
+    const validateCoupon = async () => {
+        if (!couponCode.trim()) return;
+        setCouponLoading(true);
+        setCouponError(null);
+        try {
+            const res = await fetch("/api/discount/validate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ code: couponCode, cartTotal: total })
+            });
+            const data = await res.json();
+            if (data.valid) {
+                setAppliedDiscount(data.discount);
+                setCouponCode("");
+            } else {
+                setCouponError(data.error || "Invalid code");
+            }
+        } catch (err) {
+            setCouponError("Failed to validate code");
+        } finally {
+            setCouponLoading(false);
+        }
+    };
+
+    const removeCoupon = () => {
+        setAppliedDiscount(null);
+        setCouponError(null);
+    };
+
     // Load saved addresses on mount
     useEffect(() => {
         const loadProfile = async () => {
@@ -77,9 +120,12 @@ export default function Checkout() {
         loadProfile();
     }, [user]);
 
-    // Pricing
-    const deliveryCharge = form.division === "Dhaka" ? 60 : 120;
-    const subtotalWithDelivery = total + deliveryCharge;
+    // Pricing with discount support
+    const baseDeliveryCharge = form.division === "Dhaka" ? 60 : 120;
+    const deliveryCharge = appliedDiscount?.freeShipping ? 0 : baseDeliveryCharge;
+    const discountAmount = appliedDiscount?.discountAmount || 0;
+    const subtotalAfterDiscount = Math.max(0, total - discountAmount);
+    const subtotalWithDelivery = subtotalAfterDiscount + deliveryCharge;
     const codCharge = Math.ceil(subtotalWithDelivery * 0.01);
     const grandTotal = subtotalWithDelivery + codCharge;
 
@@ -434,9 +480,23 @@ export default function Checkout() {
                                     <span className="text-gray-500">Subtotal</span>
                                     <span className="text-emerald-800">৳{total}</span>
                                 </div>
+                                {appliedDiscount && (
+                                    <div className="flex justify-between text-green-600">
+                                        <span className="flex items-center gap-1">
+                                            <Tag className="h-3 w-3" />
+                                            {appliedDiscount.label}
+                                        </span>
+                                        <span>-৳{appliedDiscount.discountAmount}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between">
-                                    <span className="text-gray-500">Delivery ({form.division})</span>
-                                    <span className="text-emerald-800">৳{deliveryCharge}</span>
+                                    <span className="text-gray-500">
+                                        Delivery ({form.division})
+                                        {appliedDiscount?.freeShipping && <span className="text-green-600 ml-1">FREE</span>}
+                                    </span>
+                                    <span className={appliedDiscount?.freeShipping ? "text-green-600 line-through" : "text-emerald-800"}>
+                                        ৳{baseDeliveryCharge}
+                                    </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">COD Charge (1%)</span>
@@ -448,6 +508,45 @@ export default function Checkout() {
                                     <span className="text-emerald-600">৳{grandTotal}</span>
                                 </div>
                             </div>
+
+                            {/* Coupon Input */}
+                            <div className="mt-4 p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                                <p className="text-xs font-medium text-emerald-700 mb-2 flex items-center gap-1">
+                                    <Tag className="h-3 w-3" /> Have a promo code?
+                                </p>
+                                {appliedDiscount ? (
+                                    <div className="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                                        <div className="flex items-center gap-2">
+                                            <Check className="h-4 w-4 text-green-600" />
+                                            <span className="font-medium text-green-700">{appliedDiscount.code}</span>
+                                            <span className="text-xs text-green-600">{appliedDiscount.label}</span>
+                                        </div>
+                                        <button onClick={removeCoupon} className="text-green-600 hover:text-green-800">
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={couponCode}
+                                            onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                                            placeholder="Enter code"
+                                            className="text-sm h-9 border-emerald-200"
+                                            onKeyDown={e => e.key === "Enter" && validateCoupon()}
+                                        />
+                                        <Button
+                                            size="sm"
+                                            onClick={validateCoupon}
+                                            disabled={couponLoading || !couponCode.trim()}
+                                            className="h-9 bg-emerald-500 hover:bg-emerald-600"
+                                        >
+                                            {couponLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
+                                        </Button>
+                                    </div>
+                                )}
+                                {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
+                            </div>
+
                             <div className="mt-4 p-3 rounded-xl bg-emerald-50 text-center">
                                 <p className="text-xs text-emerald-600">🌿 Thank you for shopping eco-friendly!</p>
                             </div>
