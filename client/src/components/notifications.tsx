@@ -118,88 +118,97 @@ export function NotificationCenter() {
 
             <AnimatePresence>
                 {isOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-80 md:w-96 bg-card border rounded-xl shadow-lg z-50 overflow-hidden"
-                    >
-                        <div className="p-4 border-b flex items-center justify-between bg-muted/40">
-                            <h3 className="font-semibold">Notifications</h3>
-                            {unreadCount > 0 && (
-                                <Button variant="ghost" size="sm" className="h-auto text-xs text-primary px-2" onClick={markAllRead}>
-                                    Mark all read
-                                </Button>
-                            )}
-                        </div>
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-40 bg-background/5 backdrop-blur-sm"
+                            onClick={() => setIsOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="absolute right-0 mt-2 w-80 md:w-96 bg-card border rounded-xl shadow-lg z-50 overflow-hidden"
+                        >
+                            <div className="p-4 border-b flex items-center justify-between bg-muted/40">
+                                <h3 className="font-semibold">Notifications</h3>
+                                {unreadCount > 0 && (
+                                    <Button variant="ghost" size="sm" className="h-auto text-xs text-primary px-2" onClick={markAllRead}>
+                                        Mark all read
+                                    </Button>
+                                )}
+                            </div>
 
-                        <div className="max-h-[60vh] overflow-y-auto">
-                            {notifications.length === 0 ? (
-                                <div className="p-8 text-center text-muted-foreground">
-                                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
-                                    <p className="text-sm">No notifications</p>
-                                </div>
-                            ) : (
-                                <div className="divide-y">
-                                    {notifications.map(n => (
-                                        <div
-                                            key={n.id}
-                                            className={`transition ${!n.read ? "bg-primary/5" : ""}`}
-                                        >
+                            <div className="max-h-[60vh] overflow-y-auto">
+                                {notifications.length === 0 ? (
+                                    <div className="p-8 text-center text-muted-foreground">
+                                        <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
+                                        <p className="text-sm">No notifications</p>
+                                    </div>
+                                ) : (
+                                    <div className="divide-y">
+                                        {notifications.map(n => (
                                             <div
-                                                className="p-4 hover:bg-muted/50 cursor-pointer flex gap-3"
-                                                onClick={() => toggleExpand(n.id)}
+                                                key={n.id}
+                                                className={`transition ${!n.read ? "bg-primary/5" : ""}`}
                                             >
-                                                <div className="mt-2">{getTypeIcon(n.type)}</div>
-                                                <div className="flex-1 space-y-1 min-w-0">
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <p className={`text-sm ${!n.read ? "font-semibold" : "font-medium"}`}>{n.title}</p>
-                                                        <div className="flex items-center gap-1 flex-shrink-0">
-                                                            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                                {new Date(n.created_at).toLocaleString("en-BD", {
-                                                                    timeZone: "Asia/Dhaka",
-                                                                    month: "short",
-                                                                    day: "numeric",
-                                                                    hour: "2-digit",
-                                                                    minute: "2-digit",
-                                                                    hour12: false
-                                                                })}
-                                                            </span>
-                                                            {expandedId === n.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                                        </div>
-                                                    </div>
-                                                    <p className={`text-sm text-muted-foreground ${expandedId !== n.id ? "line-clamp-1" : ""}`}>
-                                                        {n.message}
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={(e) => deleteNotification(n.id, e)}
-                                                    className="text-muted-foreground hover:text-destructive opacity-50 hover:opacity-100 transition mt-1"
+                                                <div
+                                                    className="p-4 hover:bg-muted/50 cursor-pointer flex gap-3"
+                                                    onClick={() => toggleExpand(n.id)}
                                                 >
-                                                    <X className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                            {/* Expanded Content */}
-                                            <AnimatePresence>
-                                                {expandedId === n.id && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: "auto", opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="px-4 pb-4 overflow-hidden"
-                                                    >
-                                                        <div className="bg-muted/30 rounded-lg p-3">
-                                                            <p className="text-sm text-foreground whitespace-pre-wrap">{n.message}</p>
+                                                    <div className="mt-2">{getTypeIcon(n.type)}</div>
+                                                    <div className="flex-1 space-y-1 min-w-0">
+                                                        <div className="flex items-start justify-between gap-2">
+                                                            <p className={`text-sm ${!n.read ? "font-semibold" : "font-medium"}`}>{n.title}</p>
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                                                    {new Date(n.created_at).toLocaleString("en-BD", {
+                                                                        timeZone: "Asia/Dhaka",
+                                                                        month: "short",
+                                                                        day: "numeric",
+                                                                        hour: "2-digit",
+                                                                        minute: "2-digit",
+                                                                        hour12: false
+                                                                    })}
+                                                                </span>
+                                                                {expandedId === n.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                                            </div>
                                                         </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </motion.div>
+                                                        <p className={`text-sm text-muted-foreground ${expandedId !== n.id ? "line-clamp-1" : ""}`}>
+                                                            {n.message}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        onClick={(e) => deleteNotification(n.id, e)}
+                                                        className="text-muted-foreground hover:text-destructive opacity-50 hover:opacity-100 transition mt-1"
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                                {/* Expanded Content */}
+                                                <AnimatePresence>
+                                                    {expandedId === n.id && (
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{ height: "auto", opacity: 1 }}
+                                                            exit={{ height: 0, opacity: 0 }}
+                                                            className="px-4 pb-4 overflow-hidden"
+                                                        >
+                                                            <div className="bg-muted/30 rounded-lg p-3">
+                                                                <p className="text-sm text-foreground whitespace-pre-wrap">{n.message}</p>
+                                                            </div>
+                                                        </motion.div>
+                                                    )}
+                                                </AnimatePresence>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </>
                 )}
             </AnimatePresence>
         </div>
