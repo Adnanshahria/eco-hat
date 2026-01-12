@@ -312,11 +312,14 @@ export default function Auth() {
             <div className="relative">
                 <KeyRound className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
+                    id="otp-code"
+                    name="otp"
                     value={otp}
                     onChange={e => setOtp(e.target.value)}
                     maxLength={6}
                     className="pl-10 text-center text-xl tracking-widest font-mono"
                     placeholder="000000"
+                    autoComplete="one-time-code"
                     required
                 />
             </div>
@@ -366,26 +369,32 @@ export default function Auth() {
                             {step === "reset_password" && (
                                 <div className="space-y-3">
                                     <div>
-                                        <Label>New Password</Label>
+                                        <Label htmlFor="new-password">New Password</Label>
                                         <Input
+                                            id="new-password"
+                                            name="newPassword"
                                             type="password"
                                             value={password}
                                             onChange={e => setPassword(e.target.value)}
                                             placeholder="Enter new password"
                                             required
                                             minLength={6}
+                                            autoComplete="new-password"
                                             className="mt-2"
                                         />
                                     </div>
                                     <div>
-                                        <Label>Confirm Password</Label>
+                                        <Label htmlFor="confirm-password">Confirm Password</Label>
                                         <Input
+                                            id="confirm-password"
+                                            name="confirmPassword"
                                             type="password"
                                             value={confirmPassword}
                                             onChange={e => setConfirmPassword(e.target.value)}
                                             placeholder="Confirm new password"
                                             required
                                             minLength={6}
+                                            autoComplete="new-password"
                                             className="mt-2"
                                         />
                                         {password && confirmPassword && password !== confirmPassword && (
@@ -412,8 +421,8 @@ export default function Auth() {
                             </button>
                             <h2 className="text-xl font-bold text-center">Reset Password</h2>
                             <div>
-                                <Label>Email</Label>
-                                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                                <Label htmlFor="forgot-email">Email</Label>
+                                <Input id="forgot-email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
                             </div>
                             {message && <div className="text-primary text-sm bg-primary/10 p-3 rounded-lg">{message}</div>}
                             <Button type="submit" className="w-full" disabled={loading}>Send Code</Button>
@@ -443,8 +452,8 @@ export default function Auth() {
                                 {mode === "register" && (
                                     <>
                                         <div>
-                                            <Label>Full Name</Label>
-                                            <Input value={fullName} onChange={e => setFullName(e.target.value)} required />
+                                            <Label htmlFor="fullName">Full Name</Label>
+                                            <Input id="fullName" name="fullName" value={fullName} onChange={e => setFullName(e.target.value)} autoComplete="name" required />
                                         </div>
                                         <div className="flex gap-2">
                                             {(["buyer", "seller"] as const).map(r => (
@@ -457,17 +466,17 @@ export default function Auth() {
                                 )}
 
                                 <div>
-                                    <Label>Email</Label>
-                                    <Input type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+                                    <Label htmlFor="login-email">Email</Label>
+                                    <Input id="login-email" name="email" type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="email" required />
                                 </div>
 
                                 <div>
                                     <div className="flex justify-between">
-                                        <Label>Password</Label>
+                                        <Label htmlFor="login-password">Password</Label>
                                         {mode === "login" && <span onClick={() => setStep("forgot_password")} className="text-xs text-primary cursor-pointer hover:underline">Forgot?</span>}
                                     </div>
                                     <div className="relative">
-                                        <Input type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required />
+                                        <Input id="login-password" name="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} required />
                                         <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-muted-foreground">
                                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                         </button>

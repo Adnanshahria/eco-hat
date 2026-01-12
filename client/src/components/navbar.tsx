@@ -57,11 +57,14 @@ export function NavBar({ onSearch }: NavBarProps) {
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                 <Input
+                                    id="desktop-search"
+                                    name="search"
                                     type="search"
                                     placeholder={t('nav.search')}
                                     className="pl-10 w-64 bg-muted/50 border-0 focus-visible:ring-primary/30"
                                     value={searchQuery}
                                     onChange={handleSearch}
+                                    aria-label="Search products"
                                 />
                             </div>
 
@@ -170,9 +173,12 @@ export function NavBar({ onSearch }: NavBarProps) {
                 >
                     <div className="flex flex-col gap-3">
                         <Input
+                            id="mobile-search"
+                            name="search"
                             type="search"
                             placeholder={t('nav.search')}
                             className="bg-muted/50 touch-target border border-border rounded-lg"
+                            aria-label="Search products"
                         />
 
                         {/* Navigation Links */}
