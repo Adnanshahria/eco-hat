@@ -164,14 +164,16 @@ export function NotificationCenter() {
                                                             <p className={`text-sm ${!n.read ? "font-semibold" : "font-medium"}`}>{n.title}</p>
                                                             <div className="flex items-center gap-1 flex-shrink-0">
                                                                 <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                                                                    {new Date(n.created_at).toLocaleString("en-BD", {
-                                                                        timeZone: "Asia/Dhaka",
-                                                                        month: "short",
-                                                                        day: "numeric",
-                                                                        hour: "2-digit",
-                                                                        minute: "2-digit",
-                                                                        hour12: false
-                                                                    })}
+                                                                    {(() => {
+                                                                        // Convert UTC to Bangladesh time (UTC+6)
+                                                                        const utcDate = new Date(n.created_at);
+                                                                        const bdDate = new Date(utcDate.getTime() + (6 * 60 * 60 * 1000));
+                                                                        const month = bdDate.toLocaleString("en-US", { month: "short" });
+                                                                        const day = bdDate.getUTCDate();
+                                                                        const hours = String(bdDate.getUTCHours()).padStart(2, "0");
+                                                                        const mins = String(bdDate.getUTCMinutes()).padStart(2, "0");
+                                                                        return `${month} ${day}, ${hours}:${mins}`;
+                                                                    })()}
                                                                 </span>
                                                                 {expandedId === n.id ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                                                             </div>
