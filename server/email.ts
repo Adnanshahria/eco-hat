@@ -51,10 +51,12 @@ async function getTransporter(): Promise<Transporter> {
                 user: SMTP_CONFIG.user,
                 pass: SMTP_CONFIG.pass,
             },
-            // Connection timeout settings
-            connectionTimeout: 10000, // 10 seconds
-            greetingTimeout: 10000,
-            socketTimeout: 30000,
+            // Faster connection timeout settings for quick delivery
+            connectionTimeout: 5000, // 5 seconds
+            greetingTimeout: 5000,
+            socketTimeout: 15000,
+            pool: true, // Reuse connections for faster subsequent sends
+            maxConnections: 5,
         });
     }
 
@@ -78,8 +80,8 @@ async function getTransporter(): Promise<Transporter> {
 // Retry helper with exponential backoff
 async function retryWithBackoff<T>(
     fn: () => Promise<T>,
-    maxRetries: number = 3,
-    baseDelayMs: number = 1000
+    maxRetries: number = 2, // Reduced retries for faster failure
+    baseDelayMs: number = 300 // 300ms base delay instead of 1000ms
 ): Promise<T> {
     let lastError: Error | null = null;
 
@@ -90,11 +92,9 @@ async function retryWithBackoff<T>(
             lastError = error instanceof Error ? error : new Error(String(error));
 
             if (attempt < maxRetries) {
-                const delay = baseDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
+                const delay = baseDelayMs * attempt; // Linear backoff: 300ms, 600ms
                 console.warn(`⚠️ [SMTP] Attempt ${attempt}/${maxRetries} failed. Retrying in ${delay}ms...`);
                 await new Promise(resolve => setTimeout(resolve, delay));
-                // Reset transporter for retry
-                transporterVerified = false;
             }
         }
     }

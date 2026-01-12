@@ -2,6 +2,18 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { createClient } from "@supabase/supabase-js";
+// Pre-import email functions for faster delivery (no dynamic import delay)
+import {
+  sendWelcomeEmail,
+  sendOrderConfirmationEmail,
+  sendOrderStatusEmail,
+  sendNewOrderNotificationToSeller,
+  sendOrderStatusEmailToSeller,
+  sendNewOrderNotificationToAdmin,
+  sendOrderStatusEmailToAdmin,
+  sendEmail,
+  sendOTPEmail
+} from "./email";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -27,8 +39,6 @@ export async function registerRoutes(
     }
 
     try {
-      // Dynamic import to avoid issues if email service fails to initialize
-      const { sendWelcomeEmail } = await import("./email");
       const sent = await sendWelcomeEmail(email, name);
       if (sent) {
         res.json({ success: true, message: "Welcome email sent" });
@@ -48,7 +58,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendOrderConfirmationEmail } = await import("./email");
       const sent = await sendOrderConfirmationEmail(email, parseInt(orderId), parseFloat(total));
       if (sent) {
         res.json({ success: true, message: "Order confirmation email sent" });
@@ -72,7 +81,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendOrderStatusEmail } = await import("./email");
       const success = await sendOrderStatusEmail(email, parseInt(orderId), orderNumber || `${orderId}`, status, note || "");
       if (success) {
         console.log(`✅ [Buyer Notification] Email sent successfully to ${email}`);
@@ -97,7 +105,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendNewOrderNotificationToSeller } = await import("./email");
       await sendNewOrderNotificationToSeller(email, orderNumber, productName || "Product", parseInt(quantity) || 1, parseFloat(earning) || 0);
       res.json({ success: true });
     } catch (error) {
@@ -117,7 +124,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendOrderStatusEmailToSeller } = await import("./email");
       const success = await sendOrderStatusEmailToSeller(email, orderNumber, status, buyerName || "Customer");
       if (success) {
         console.log(`✅ [Seller Notification] Email sent successfully to ${email}`);
@@ -142,7 +148,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendNewOrderNotificationToAdmin } = await import("./email");
       const { db } = await import("./db");
       const { users } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
@@ -187,7 +192,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendOrderStatusEmailToAdmin } = await import("./email");
       const { db } = await import("./db");
       const { users } = await import("@shared/schema");
       const { eq } = await import("drizzle-orm");
@@ -230,7 +234,6 @@ export async function registerRoutes(
     }
 
     try {
-      const { sendEmail } = await import("./email");
 
       // Build custom notification email
       const typeEmojis: Record<string, string> = {
@@ -345,8 +348,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: "Failed to generate OTP. Please ensure otp_codes table exists." });
       }
 
-      // Send OTP email
-      const { sendOTPEmail } = await import("./email");
+      // Send OTP email - uses pre-imported function for speed
       await sendOTPEmail(email, code, purpose);
 
       res.json({ success: true, message: "OTP sent to email" });
