@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Bell, X } from "lucide-react";
+import { Bell, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/components/auth-provider";
@@ -19,6 +19,7 @@ export function NotificationCenter() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -49,8 +50,9 @@ export function NotificationCenter() {
 
     const fetchNotifications = async () => {
         if (!user?.email) return;
+        setLoading(true);
         const { data: userData } = await supabase.from("users").select("id").eq("email", user.email).single();
-        if (!userData) return;
+        if (!userData) { setLoading(false); return; }
 
         const { data } = await supabase
             .from("notifications")
@@ -63,6 +65,7 @@ export function NotificationCenter() {
             setNotifications(data as Notification[]);
             setUnreadCount(data.filter((n: Notification) => !n.read).length);
         }
+        setLoading(false);
     };
 
     const markAsRead = async (id: number) => {
@@ -143,7 +146,12 @@ export function NotificationCenter() {
                                 </div>
 
                                 <div className="max-h-[60vh] overflow-y-auto">
-                                    {notifications.length === 0 ? (
+                                    {loading ? (
+                                        <div className="p-8 text-center">
+                                            <Loader2 className="h-6 w-6 mx-auto animate-spin text-primary" />
+                                            <p className="text-sm text-muted-foreground mt-2">Loading...</p>
+                                        </div>
+                                    ) : notifications.length === 0 ? (
                                         <div className="p-8 text-center text-muted-foreground">
                                             <Bell className="h-8 w-8 mx-auto mb-2 opacity-20" />
                                             <p className="text-sm">No notifications</p>
