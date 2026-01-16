@@ -27,6 +27,7 @@ const Auth = lazy(() => import("@/pages/auth"));
 const PrivacyPolicy = lazy(() => import("@/pages/privacy-policy"));
 const TermsOfService = lazy(() => import("@/pages/terms-of-service"));
 const OrderTracking = lazy(() => import("@/pages/order-tracking"));
+const OrbitSaas = lazy(() => import("@/pages/orbit-saas"));
 
 // Customer Pages - lazy loaded
 const CustomerShop = lazy(() => import("@/pages/customer/shop"));
@@ -69,6 +70,7 @@ function Router() {
         <Route path="/terms-of-service" component={() => <LazyRoute component={TermsOfService} />} />
         <Route path="/track-order" component={() => <LazyRoute component={OrderTracking} />} />
         <Route path="/track-order/:id" component={() => <LazyRoute component={OrderTracking} />} />
+        <Route path="/orbit-saas" component={() => <LazyRoute component={OrbitSaas} />} />
 
         {/* Customer Routes */}
         <Route path="/shop" component={() => <LazyRoute component={CustomerShop} />} />
