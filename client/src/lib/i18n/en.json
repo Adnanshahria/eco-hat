@@ -140,8 +140,8 @@
         "founder": "Founder",
         "ceo": "Co-founder & CEO",
         "cto": "Chief Technical Officer",
-        "techMgmt": "Tech Foundation & Mgmt",
-        "devOps": "DevOps & Architecture",
+        "techMgmt": "Digital Infrastructure Partner",
+        "devOps": "Website & Technical Operations",
         "ctoDesc": "Technical guidance and project oversight",
         "leadDesc": "Technical Lead and Core Development"
     },
@@ -380,5 +380,29 @@
         "taka": "৳",
         "noData": "No data available",
         "contactSupport": "Need help? Contact support at"
+    },
+    "orbitSaas": {
+        "backToEcohaat": "Back to EcoHaat",
+        "title": "ORBIT SaaS",
+        "subtitle": "Your Digital Infrastructure Partner - Delivering excellence in website development, technical operations, and enterprise-grade solutions.",
+        "ourServices": "Our Services",
+        "websiteDev": "Website Development",
+        "websiteDevDesc": "Custom websites built with cutting-edge technologies",
+        "techOps": "Technical Operations",
+        "techOpsDesc": "24/7 monitoring, maintenance & security management",
+        "digitalTrans": "Digital Transformation",
+        "digitalTransDesc": "Modernizing businesses with scalable solutions",
+        "itConsulting": "IT Consulting",
+        "itConsultingDesc": "Expert guidance for your technology decisions",
+        "meetTeam": "Meet Our Team",
+        "meetTeamDesc": "A dedicated team of professionals committed to delivering exceptional digital solutions",
+        "founderCeo": "Founder & CEO",
+        "founderCeoDesc": "Visionary leader driving digital transformation and strategic growth",
+        "coFounderLead": "Co-Founder & Technical Lead",
+        "coFounderLeadDesc": "Architecting scalable solutions and leading technical innovation",
+        "seniorDev": "Senior Web Developer",
+        "seniorDevDesc": "Crafting seamless user experiences with modern web technologies",
+        "partnershipNote": "Proud to be the Digital Infrastructure Partner for EcoHaat, powering their mission to bring sustainable products to every Bangladeshi home.",
+        "copyright": "ORBIT SaaS. All rights reserved."
     }
 }
